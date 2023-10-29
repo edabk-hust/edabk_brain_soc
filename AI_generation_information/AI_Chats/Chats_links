@@ -1,0 +1,26 @@
+Python Base CNN and Bare-metal Python
+https://chat.openai.com/share/e34e7321-4d6c-4618-9883-886b860163f5
+
+First try bare-metal Python to C code
+https://chat.openai.com/share/c96772be-4dac-43da-8013-c657dd935efa
+
+Second try bare-metal Python to C code
+https://chat.openai.com/share/64b09191-401e-4d04-8eb5-5383b95ceea5
+
+Bias and weigths as global parameters:
+https://chat.openai.com/share/4b8237a4-20c3-434b-89fb-084fc5b57287
+
+HLS
+https://chat.openai.com/share/9037bfcd-8d23-4701-bafd-59eca930a822
+
+https://chat.openai.com/share/84dd776b-0036-4fec-a878-dbcb33f6f210
+
+ADD function halffloat
+https://chat.openai.com/share/0f617bfd-f59a-49a3-a561-20b2779ca121
+
+Mult,Relu,Max, Halffloat
+https://chat.openai.com/share/2b207fc6-5952-4ef7-a562-64765e2d6722
+
+exp function
+https://chat.openai.com/share/5345f69b-5e04-4fdf-a062-f29b2fcc4564
+
