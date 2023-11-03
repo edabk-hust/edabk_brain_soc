@@ -16,5 +16,20 @@
 # Caravel user project includes
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v	     
 -v $(USER_PROJECT_VERILOG)/rtl/user_proj_example.v
+-v $(USER_PROJECT_VERILOG)/rtl/add.v                         
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_mul_bkb.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_mux_kbM.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_biaseOg.v        
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_biasg8j.v        
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_weigcud.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_conv1.v          
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_conv2.v          
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_weigdEe.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_dense.v          
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_maxphbi.v        
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_weigfYi.v
+-v $(USER_PROJECT_VERILOG)/rtl/forward_pass_maxpibs.v        
+-v $(USER_PROJECT_VERILOG)/rtl/multiply_custom_floa.v
 
  

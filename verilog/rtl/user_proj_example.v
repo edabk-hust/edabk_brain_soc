@@ -134,12 +134,12 @@ module counter #(
 
     always @(posedge clk) begin
         if (reset) begin
-            count <= 1'b0;
-            ready <= 1'b0;
+            count <= 0;
+            ready <= 0;
         end else begin
             ready <= 1'b0;
             if (~|la_write) begin
-                count <= count + 1'b1;
+                count <= count + 1;
             end
             if (valid && !ready) begin
                 ready <= 1'b1;
