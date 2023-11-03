@@ -1,8 +1,8 @@
-CARAVEL_ROOT: /home/hl271/GithubClonedRepo/edabk-brain-soc/caravel
-MCW_ROOT: /home/hl271/GithubClonedRepo/edabk-brain-soc/mgmt_core_wrapper
+CARAVEL_ROOT: /home/hmp/edabk_brain_soc/caravel
+MCW_ROOT: /home/hmp/edabk_brain_soc/mgmt_core_wrapper
 PDK: sky130A
-PDK_ROOT: /home/hl271/GithubClonedRepo/edabk-brain-soc/dependencies/pdks
-USER_PROJECT_ROOT: /home/hl271/GithubClonedRepo/edabk-brain-soc
+PDK_ROOT: /home/hmp/edabk_brain_soc/dependencies/pdks
+USER_PROJECT_ROOT: /home/hmp/edabk_brain_soc
 caravan: false
 clk: 25
 emailto:
