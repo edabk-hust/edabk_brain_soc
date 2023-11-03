@@ -44,4 +44,4 @@ https://chat.openai.com/share/e6262b11-6252-4525-9ab7-62ebd6356d08
 ### user_project_wrapper
 - https://chat.openai.com/share/3ffaa58f-c77f-4b4d-9b83-35487e76d84a
 
-*By EDABK lab, November 2023*
+*By EDABK lab's members, November 2023*
