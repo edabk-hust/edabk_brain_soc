@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 * NGSPICE file created from user_project_wrapper.ext - technology: sky130A
 
 * Black-box entry subcircuit for neuron_core abstract view
@@ -141,3 +142,8 @@ Xmprj wb_clk_i wb_rst_i vccd1 vssd1 wbs_ack_o wbs_adr_i[0] wbs_adr_i[10] wbs_adr
 + neuron_core
 .ends
 
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:44ca5ae9246238d5a232b8f0a39fd45269beb9c97233d5fc2ba9ef1d60ae6192
+size 12006
+>>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246

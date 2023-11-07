@@ -65,7 +65,11 @@ module user_project_wrapper #(
 /* User project neuron_core is instantiated  here   */
 /*--------------------------------------*/
 
+<<<<<<< HEAD
 neuron_core mprj (
+=======
+neuron_core core_inst (
+>>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246
     `ifdef USE_POWER_PINS
     .vccd1(vccd1),
     .vssd1(vssd1),

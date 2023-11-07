@@ -54,7 +54,11 @@ module user_project_wrapper (user_clock2,
  input [3:0] wbs_sel_i;
 
 
+<<<<<<< HEAD
  neuron_core mprj (.clk(wb_clk_i),
+=======
+ neuron_core core_inst (.clk(wb_clk_i),
+>>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246
     .rst(wb_rst_i),
     .vccd1(vccd1),
     .vssd1(vssd1),

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *SPEF "ieee 1481-1999"
 *DESIGN "user_project_wrapper"
 *DATE "11:11:11 Fri 11 11, 1111"
@@ -5135,3 +5136,8 @@ wbs_we_i I
 4 *645:11 *645:13 1137.02 
 5 *645:13 *646:wbs_we_i 1.77173 
 *END
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:b3f90eee2b012ff97c3301121b1d19269e6cf8fa362689a8658329d4bfcadbf6
+size 114924
+>>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246

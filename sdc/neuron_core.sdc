@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ###############################################################################
 # Created by write_sdc
 # Sat Nov  4 10:56:42 2023
@@ -410,3 +411,8 @@ set_timing_derate -late 1.0500
 ###############################################################################
 set_max_transition 1.0000 [current_design]
 set_max_fanout 16.0000 [current_design]
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:5121d73a9e298a1d76a542986ae0ac0f30e57628850d1f0500f270366670746c
+size 30993
+>>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246
