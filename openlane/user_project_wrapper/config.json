@@ -2,26 +2,26 @@
     "DESIGN_NAME": "user_project_wrapper",
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
-        "dir::../../verilog/rtl/user_project_wrapper.v"
+        "dir::../../verilog/neuron_core/user_project_wrapper.v"
     ],
-    "ROUTING_CORES": 1,
+    "ROUTING_CORES": 16,
     "CLOCK_PERIOD": 25,
     "CLOCK_PORT": "wb_clk_i",
-    "CLOCK_NET": "mprj.clk",
-    "FP_PDN_MACRO_HOOKS": "mprj vccd1 vssd1 vccd1 vssd1",
+    "CLOCK_NET": "core_inst.clk",
+    "FP_PDN_MACRO_HOOKS": "core_inst vccd1 vssd1 vccd1 vssd1",
     "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
     "MAGIC_DEF_LABELS": 0,
     "VERILOG_FILES_BLACKBOX": [
-        "dir::../../verilog/gl/user_proj_example.v"
+        "dir::../../verilog/gl/neuron_core.v"
     ],
-    "EXTRA_LEFS": "dir::../../lef/user_proj_example.lef",
-    "EXTRA_GDS_FILES": "dir::../../gds/user_proj_example.gds",
-    "EXTRA_LIBS": "dir::../../lib/user_proj_example.lib",
+    "EXTRA_LEFS": "dir::../../lef/neuron_core.lef",
+    "EXTRA_GDS_FILES": "dir::../../gds/neuron_core.gds",
+    "EXTRA_LIBS": "dir::../../lib/neuron_core.lib",
     "EXTRA_SPEFS": [
-        "user_proj_example", 
-        "dir::../../spef/multicorner/user_proj_example.min.spef", 
-        "dir::../../spef/multicorner/user_proj_example.nom.spef", 
-        "dir::../../spef/multicorner/user_proj_example.max.spef"
+        "neuron_core", 
+        "dir::../../spef/multicorner/neuron_core.min.spef", 
+        "dir::../../spef/multicorner/neuron_core.nom.spef", 
+        "dir::../../spef/multicorner/neuron_core.max.spef"
     ],
     "BASE_SDC_FILE": "dir::base_user_project_wrapper.sdc",
     "IO_SYNC": 0,
@@ -32,12 +32,15 @@
     "SYNTH_ELABORATE_ONLY": 1,
     "PL_RANDOM_GLB_PLACEMENT": 1,
     "PL_RESIZER_DESIGN_OPTIMIZATIONS": 0,
-    "PL_RESIZER_TIMING_OPTIMIZATIONS": 0,
+    "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
     "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 0,
-    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 0,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
     "PL_RESIZER_BUFFER_INPUT_PORTS": 0,
     "FP_PDN_ENABLE_RAILS": 0,
+    
     "GRT_REPAIR_ANTENNAS": 0,
+    "HEURISIC_ANTENNA_THRESHOLD":110,
+    
     "RUN_FILL_INSERTION": 0,
     "RUN_TAP_DECAP_INSERTION": 0,
     "FP_PDN_VPITCH": 180,

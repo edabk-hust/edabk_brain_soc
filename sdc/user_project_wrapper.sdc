@@ -1,6 +1,6 @@
 ###############################################################################
 # Created by write_sdc
-# Wed Jul 19 15:42:08 2023
+# Sun Nov  5 09:01:48 2023
 ###############################################################################
 current_design user_project_wrapper
 ###############################################################################
@@ -2005,8 +2005,8 @@ set_input_transition -min 0.0900 [get_ports {wbs_sel_i[1]}]
 set_input_transition -max 0.1800 [get_ports {wbs_sel_i[1]}]
 set_input_transition -min 0.0900 [get_ports {wbs_sel_i[0]}]
 set_input_transition -max 0.1800 [get_ports {wbs_sel_i[0]}]
-set_timing_derate -early 0.9500
-set_timing_derate -late 1.0500
+set_timing_derate -early 0.8500
+set_timing_derate -late 0.1500
 ###############################################################################
 # Design Rules
 ###############################################################################

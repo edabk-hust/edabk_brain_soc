@@ -72,6 +72,9 @@ set_clock_latency -source -max $clk_max_latency [get_clocks {clk}]
 set_clock_latency -source -min $clk_min_latency [get_clocks {clk}]
 puts "\[INFO\]: Setting clock latency range: $clk_min_latency : $clk_max_latency"
 
+set_timing_derate -early 1.4000
+set_timing_derate -late 0.1500
+
 # Clock input Transition
 set usr_clk_tran 0.13
 set clk_tran 0.61
