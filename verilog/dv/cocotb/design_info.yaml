@@ -1,9 +1,0 @@
-CARAVEL_ROOT: /home/edabk/efabless/caravel_user_project/caravel
-MCW_ROOT: /home/edabk/efabless/caravel_user_project/mgmt_core_wrapper
-PDK: sky130A
-PDK_ROOT: /home/edabk/.volare
-USER_PROJECT_ROOT: /home/edabk/efabless/caravel_user_project
-caravan: false
-clk: 25
-emailto:
-- null

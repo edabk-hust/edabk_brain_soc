@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 magic
 tech sky130A
 magscale 1 2
@@ -44936,8 +44935,3 @@ port 644 nsew signal input
 << properties >>
 string FIXED_BBOX 0 0 584000 704000
 << end >>
-=======
-version https://git-lfs.github.com/spec/v1
-oid sha256:4b8df95dc5cc1861a403dd0ecf059c5390c8ca5c8544db42e8a3840986cc8d76
-size 1457521
->>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246

@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 ###############################################################################
 # Created by write_sdc
-# Sun Nov  5 09:01:48 2023
+# Mon Nov  6 02:12:48 2023
 ###############################################################################
 current_design user_project_wrapper
 ###############################################################################
@@ -2006,15 +2005,10 @@ set_input_transition -min 0.0900 [get_ports {wbs_sel_i[1]}]
 set_input_transition -max 0.1800 [get_ports {wbs_sel_i[1]}]
 set_input_transition -min 0.0900 [get_ports {wbs_sel_i[0]}]
 set_input_transition -max 0.1800 [get_ports {wbs_sel_i[0]}]
-set_timing_derate -early 0.8500
+set_timing_derate -early 1.4000
 set_timing_derate -late 0.1500
 ###############################################################################
 # Design Rules
 ###############################################################################
 set_max_transition 1.5000 [current_design]
 set_max_fanout 10.0000 [current_design]
-=======
-version https://git-lfs.github.com/spec/v1
-oid sha256:c8d7f4aeaa338624d874944f592c6f87ec4d1025a6fe5bfe0ac27d81984920fa
-size 151956
->>>>>>> 7fa566336ad936253585d16aa726fb716d9b4246
