@@ -45,6 +45,6 @@ https://chat.openai.com/share/e6262b11-6252-4525-9ab7-62ebd6356d08
 - https://chat.openai.com/share/3ffaa58f-c77f-4b4d-9b83-35487e76d84a
 
 ## Code C chatlog
-- https://chat.openai.com/share/24c2843b-0db7-40dc-91f3-b21feaf3ff38
+- https://chat.openai.com/share/610526d8-d351-472f-8ab8-51c5a9c956c6
 
 *By EDABK lab's members, November 2023*

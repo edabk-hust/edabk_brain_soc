@@ -7,15 +7,16 @@
 #define NEURONS_PER_CORE 32
 #define NUM_CORES 5
 #define FIFO_SIZE 256
+#define SYNAPSES 32
 
 typedef struct {
-    uint8_t current_membrane_potential;
-    uint8_t reset_posi_potential;
-    uint8_t reset_nega_potential;
-    uint8_t weights[4];
-    uint8_t leakage_value;
-    uint8_t positive_threshold;
-    uint8_t negative_threshold;
+    int8_t current_membrane_potential;
+    int8_t reset_posi_potential;
+    int8_t reset_nega_potential;
+    int8_t weights[4];
+    int8_t leakage_value;
+    int8_t positive_threshold;
+    int8_t negative_threshold;
     uint8_t destination_axon;
 } Neuron;
 
@@ -28,6 +29,7 @@ typedef struct {
 typedef struct {
     Neuron neurons[NEURONS_PER_CORE];
     uint8_t synapse_connections[AXONS][NEURONS_PER_CORE];
+    uint8_t large_synapse_connections[NEURONS_PER_CORE][AXONS];
     Queue spikeQueue;
     uint8_t output_axons[NEURONS_PER_CORE];
 } SNNCore;
@@ -94,6 +96,117 @@ void readNeuronData(SNNCore* core, const char* line, int neuronIndex) {
 
 }
 
+
+void printSynapticConnections(SNNCore* core) {
+    uint8_t transposed_matrix[AXONS][NEURONS_PER_CORE];
+    // printf("Transposed synaptic connections for Core:\n");
+    
+    // Transpose synaptic connections into a 256x32 matrix
+    for (int neuronIndex = 0; neuronIndex < NEURONS_PER_CORE; neuronIndex++) {
+        for (int axonIndex = 0; axonIndex < AXONS; axonIndex++) {
+            transposed_matrix[axonIndex][neuronIndex] = core->synapse_connections[axonIndex][neuronIndex];
+        }
+    }
+
+    // Print the transposed synaptic connections
+    for (int axonIndex = 0; axonIndex < AXONS; axonIndex++) {
+        for (int neuronIndex = 0; neuronIndex < NEURONS_PER_CORE; neuronIndex++) {
+            printf("%d", transposed_matrix[axonIndex][neuronIndex]);
+        }
+        printf("\n");
+    }
+}
+void saveSynapticConnections(SNNCore* cores, const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Unable to open file %s for writing.\n", filename);
+        return;
+    }
+
+    for (int coreIndex = 0; coreIndex < NUM_CORES; coreIndex++) {
+        for (int axonIndex = 0; axonIndex < AXONS; axonIndex++) {
+            for (int neuronIndex = 0; neuronIndex < NEURONS_PER_CORE; neuronIndex++) {
+                fprintf(file, "%d", cores[coreIndex].synapse_connections[axonIndex][neuronIndex]);
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
+
+void packParameters(uint32_t *row, uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4) {
+    *row = (p1 << 24) | (p2 << 16) | (p3 << 8) | p4;
+}
+void saveNeuronParameters(SNNCore* cores, uint32_t binaryParameters[NUM_CORES][NEURONS_PER_CORE][4]) {
+    for (int c = 0; c < NUM_CORES; c++) {
+        for (int n = 0; n < NEURONS_PER_CORE; n++) {
+            packParameters(&binaryParameters[c][n][0],
+                cores[c].neurons[n].current_membrane_potential & 0xFF,
+                cores[c].neurons[n].reset_posi_potential & 0xFF,
+                cores[c].neurons[n].reset_nega_potential & 0xFF,
+                cores[c].neurons[n].weights[0] & 0xFF);
+
+            packParameters(&binaryParameters[c][n][1],
+                cores[c].neurons[n].weights[1] & 0xFF,
+                cores[c].neurons[n].weights[2] & 0xFF,
+                cores[c].neurons[n].weights[3] & 0xFF,
+                cores[c].neurons[n].leakage_value & 0xFF);
+
+            packParameters(&binaryParameters[c][n][2],
+                cores[c].neurons[n].positive_threshold & 0xFF,
+                cores[c].neurons[n].negative_threshold & 0xFF,
+                cores[c].neurons[n].destination_axon & 0xFF,
+                0); // Last 8 bits are zeros as specified
+
+            binaryParameters[c][n][3] = 0; // Fourth row is all zeros
+        }
+    }
+}
+
+void saveBinaryParametersToFile(const char* filename, uint32_t binaryParameters[NUM_CORES][NEURONS_PER_CORE][4]) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Không thể mở tệp để ghi dữ liệu.\n");
+        return;
+    }
+
+    for (int c = 0; c < NUM_CORES; c++) {
+        for (int n = 0; n < NEURONS_PER_CORE; n++) {
+            for (int i = 0; i < 4; i++) {
+                uint32_t value = binaryParameters[c][n][i];
+                
+                for (int bit = 31; bit >= 0; bit--) {
+                    int bitValue = (value >> bit) & 1;
+                    fprintf(file, "%d", bitValue);
+                }
+                fprintf(file, "\n"); 
+            }
+        }
+    }
+
+    fclose(file);
+}
+
+void printNeuronParameters(uint32_t binaryParameters[NUM_CORES][NEURONS_PER_CORE][4]) {
+    for (int c = 0; c < NUM_CORES; c++) {
+        for (int n = 0; n < NEURONS_PER_CORE; n++) {
+            printf("Core %d, Neuron %d:\n", c, n);
+            for (int i = 0; i < 4; i++) {
+                for (int bit = 31; bit >= 0; bit--) {
+                    printf("%u", (binaryParameters[c][n][i] >> bit) & 1);
+                    // if (bit % 8 == 0) printf(" "); // Separator for visual aid
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+    }
+}
+
+
+
+
 int getNeuronData(SNNCore cores[]) {
     FILE* file = fopen("neuron_data.txt", "r");
     if (file == NULL) {
@@ -121,12 +234,9 @@ void processSpikeEvent(SNNCore* core,int axonIndex) {
             if (core->synapse_connections[axon_index][i]) {
                 Neuron *neuron = &core->neurons[i];
 
-                // Increase membrane potential by synaptic weight
                 neuron->current_membrane_potential += neuron->weights[i % 4];
-                // Subtract leakage value from membrane potential
                 neuron->current_membrane_potential -= neuron->leakage_value;
 
-                // Check against thresholds
                 if (neuron->current_membrane_potential > neuron->positive_threshold) {
                     neuron->current_membrane_potential = neuron->reset_posi_potential;
                     core->output_axons[i] = 1;
@@ -140,6 +250,13 @@ void processSpikeEvent(SNNCore* core,int axonIndex) {
     }
 }
 
+void printQueue(Queue* queue) {
+    printf("Queue contents: ");
+    for (int i = queue->front; i <= queue->rear; i++) {
+        printf("%d ", queue->array[i]);
+    }
+    printf("\n");
+}
 
 void initializeCoreQueues() {
     for (int i = 0; i < NUM_CORES; i++) {
@@ -147,14 +264,56 @@ void initializeCoreQueues() {
     }
 }
 
-void loadSpikesToQueue(const char* input_spike[NUM_CORES]) {
+Queue* loadSpikesToQueue(const char* input_spike[NUM_CORES]) {
+    Queue* lastSpikeQueue = NULL;
+    int count_input = 0;
+
+   FILE* output_file = fopen("input_spike.txt", "w");
+    if (output_file == NULL) {
+        printf("Không thể mở tệp input_spike.txt để ghi.\n");
+        return NULL;
+    }
+
     for (int core = 0; core < NUM_CORES; core++) {
-        for (int axon = 0; axon < AXONS; axon++) {
-            if (input_spike[core][axon] == '1') {
-                enqueue(&cores[core].spikeQueue, axon);
+        int total_spikes = 0;
+        for (int j = 0; j < AXONS; ++j) {
+            if (input_spike[core][j] == '1') {
+                total_spikes ++;
             }
         }
+
+        // Ghi tổng vào đầu file cho từng core
+        fprintf(output_file, "%d\n", total_spikes);
+
+        for (int axon = 0; axon < AXONS; axon++) {
+            if (input_spike[core][axon] == '1') {
+                count_input++;
+                enqueue(&cores[core].spikeQueue, axon);
+                fprintf(output_file, "%d ", axon); 
+            }
+        }
+        lastSpikeQueue = &cores[core].spikeQueue; 
+        fprintf(output_file, "\n"); 
     }
+
+    fclose(output_file); 
+
+    return lastSpikeQueue;
+}
+
+void saveOutputAxons(SNNCore* cores, const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Unable to open file %s for writing.\n", filename);
+        return;
+    }
+
+    for (int axonIndex = 0; axonIndex < NEURONS_PER_CORE; axonIndex++) {
+        fprintf(file, "%d", cores[4].output_axons[axonIndex]);
+    }
+    fprintf(file, "\n");
+
+    fclose(file);
 }
 
 int main() {
@@ -163,7 +322,7 @@ int main() {
         "1111111010001010010010100010101111110000101000001011000110100100011010110100101100001000101100101010010010100100111110110110101100001010111001110110101010110110101010111001011011111000000010001001001101010100101000101000100010100101100001111011000001011110",
         "1100101010100000101100101001000010001001011010110110101010100000011101101001010010101001000000010110100101101010111110100101010100011111101000010010110010010101010110101101001010000001010100111001111110010100100001101010110011001100100100001101010000000011",
         "1100100101010101101001001001011100100000100010100001000001110010000100001010000101010111011100000000101010000101111100110000011010010001001110010111110100101001011100000001111001010010110101110111001010100101001010001101000010010010000111010001110111101100",
-        "1010101010101010101001011001101010111110101010010110101111010010111000110100010001011000011010010101011101000111001111101011000101010101010011011100100011010101000101011010110110001101010100010111010010001110010110110101001000001101111110101100011100011001"
+        "1000101000000000100010000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     };
 
     if (getNeuronData(cores)) {
@@ -173,47 +332,50 @@ int main() {
     initializeCoreQueues();
     loadSpikesToQueue(input_spikes);
 
-    // int done = 0;
-    // while (!done) {
-        // done = 1;
-        for (int i = 0; i < NUM_CORES; i++) {
-            printf("Core %d:\n",i);
-            // while (!isEmpty(&cores[i].spikeQueue)) {
-                int axonIndex = dequeue(&cores[i].spikeQueue);
-                processSpikeEvent(&cores[i],axonIndex);
-                 printf("Output spikes for Core %d:\n", i);
-                for(int axon = 0; axon < 32; axon++) {
-                    printf("%d", cores[i].output_axons[axon]);
-                }
-                printf("\n");
-                // done = 0;
-            }
-        // }
-    // }
-    // for (int i = 0; i < NUM_CORES; i++) {
-    // printf("Core %d:\n", i);
-//     for (int j = 0; j < NEURONS_PER_CORE; j++) {
-//         Neuron* neuron = &cores[i].neurons[j];
-//         printf("Neuron %d:\n", j);
-//         printf("Current Membrane Potential: %d\n", neuron->current_membrane_potential);
-//         printf("Reset Potential: %d\n", neuron->reset_potential);
-//         printf("Leakage Value: %d\n", neuron->leakage_value);
-//         printf("Positive Threshold: %d\n", neuron->positive_threshold);
-//         printf("Negative Threshold: %d\n", neuron->negative_threshold);
-//         printf("Destination Axon: %d\n", neuron->destination_axon);
-//         printf("Weights: ");
-//         for (int k = 0; k < 4; k++) {
-//             printf("%d ", neuron->weights[k]);
-//         }
-//         printf("\n");
-//         printf("Synapse Connections: ");
-//         for (int k = 0; k < AXONS; k++) {
-//             printf("%d ", cores[i].synapse_connections[k][j]);
-//         }
-//         printf("\n");
-//         printf("\n");
-//     }
-// }
+    for (int i = 0; i < NUM_CORES; i++) {
+            int axonIndex = dequeue(&cores[i].spikeQueue);
+            processSpikeEvent(&cores[i],axonIndex);
+                printf("Output spikes for Core %d:\n", i);
+            printf("\n");
+    }
+    for(int axon = 0; axon < 32; axon++) {
+            printf("%d", cores[4].output_axons[axon]);
+    }
+    saveSynapticConnections(cores, "synaptic_connections.txt");
+    
+    FILE* file = fopen("input_spike.txt", "w");
+    if (!file) {
+        perror("Error opening file");
+        return -1;
+    }
+
+    for (int i = 0; i < NUM_CORES; ++i) {
+        
+    }
+
+    Queue* lastSpikeQueue = loadSpikesToQueue(input_spikes);
+    
+    for (int i = 0; i < NUM_CORES; i++) {
+        printf("Core %d Synaptic Connections:\n", i);
+        printSynapticConnections(&cores[i]);
+        printf("\n");
+    }
+    uint32_t binaryParameters[NUM_CORES][NEURONS_PER_CORE][4];
+     for (int coreIndex = 0; coreIndex < NUM_CORES; coreIndex++) {
+        printf("Parameters for Core %d Neurons:\n", coreIndex);
+
+        for (int neuronIndex = 0; neuronIndex < NEURONS_PER_CORE; neuronIndex++) {
+            // Save the neuron parameters into the matrix
+            saveNeuronParameters(cores, binaryParameters);
+            saveBinaryParametersToFile("neuron_parameter.txt", binaryParameters);
+
+            // Print the neuron parameters matrix
+            printNeuronParameters(binaryParameters);
+        }
+    }
+    
+    saveOutputAxons(cores, "output_axons.txt");
+    
 
     return 0;
 }
