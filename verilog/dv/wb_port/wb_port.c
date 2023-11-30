@@ -19,6 +19,10 @@
 #include <defs.h>
 #include <stub.c>
 
+/*
+    - reg_mprj_slave is assigned to the user project address on the wishbone bus
+    - we can read from/write to the wishbone bus through the reg_mprj_slave
+*/  
 #define reg_mprj_slave (*(volatile uint32_t*)0x30000000)
 
 /*
