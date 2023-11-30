@@ -8,7 +8,7 @@
 #define SYNAPSE_COLS 256
 
 typedef struct {
-    uint8_t synapse_connection[NEURONS_PER_CORE][SYNAPSE_COLS];
+    uint8_t synapse_connection[NEURONS_PER_CORE][32]; // since each uint_8 already can store 8-bit
     uint8_t current_membrane_potential;
     uint8_t reset_posi_potential;
     uint8_t reset_nega_potential;
@@ -45,14 +45,17 @@ void convertNeuronData(const char* inputFileName, const char* outputFileName) {
 
             // Read and write synapse connection data (256 bits)
             for (int col = 0; col < SYNAPSE_COLS; col++) {
-                int synapseBit;
-                fscanf(inputFile, "%1d", &synapseBit);
-                neuron.synapse_connection[neuronIndex][col] = synapseBit;
+                for (int batch = 0; batch < 32; batch++) {
+                    int synapseBit;
+                    fscanf(inputFile, "%1d", &synapseBit);
+                    neuron.synapse_connection[neuronIndex][batch] |=
+                        (synapseBit << (7 - (col % 8)));
+                }
             }
 
             // Read and write other neuron parameters
-            fscanf(inputFile, "%8" SCNu8 "%8" SCNu8 "%8" SCNu8 "%8" SCNu8 "%8" SCNu8
-                              "%8" SCNu8 "%8" SCNu8 "%8" SCNu8 "%8" SCNu8 "%8" SCNu8,
+            fscanf(inputFile, "%" SCNu8 "%" SCNu8 "%" SCNu8 "%" SCNu8 "%" SCNu8
+                              "%" SCNu8 "%" SCNu8 "%" SCNu8 "%" SCNu8 "%" SCNu8,
                    &neuron.current_membrane_potential, &neuron.reset_posi_potential,
                    &neuron.reset_nega_potential, &neuron.weights[0], &neuron.weights[1],
                    &neuron.weights[2], &neuron.weights[3], &neuron.leakage_value,
@@ -62,12 +65,14 @@ void convertNeuronData(const char* inputFileName, const char* outputFileName) {
             fprintf(outputFile, "        {");
 
             // Write synapse connection data to the C file
-            for (int col = 0; col < SYNAPSE_COLS; col++) {
-                fprintf(outputFile, "%d, ", neuron.synapse_connection[neuronIndex][col]);
+            for (int col = 0; col < SYNAPSE_COLS / 8; col++) {
+                fprintf(outputFile, "0x%02X, ", neuron.synapse_connection[neuronIndex][col]);
             }
 
             // Write other neuron parameters to the C file
-            fprintf(outputFile, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d},\n",
+            fprintf(outputFile, "%" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8
+                                ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8 ", %" PRIu8
+                                ", %" PRIu8 "},\n",
                     neuron.current_membrane_potential, neuron.reset_posi_potential,
                     neuron.reset_nega_potential, neuron.weights[0], neuron.weights[1],
                     neuron.weights[2], neuron.weights[3], neuron.leakage_value,
