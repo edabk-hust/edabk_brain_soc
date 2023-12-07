@@ -16,7 +16,8 @@ typedef struct {
     int8_t leakage_value;
     int8_t positive_threshold;
     int8_t negative_threshold;
-    // uint8_t core_dest;               // We fixed the destination core of each neuron in C code
+    uint8_t axon_dest;                  // Index of the destination axon (of destination core) if Neuron creates spike
+    // uint8_t core_dest;               // Don't need since we fixed the destination core of each neuron in C code
 } Neuron;
 
 ////////////////////////////////////////////// Core data structure
@@ -33,9 +34,9 @@ typedef struct {
     int8_t dy;
 } Packet;
 
-Packet packets_list[NUM_CORES][1000];
-Core SNN_Data[NUM_CORES];
-
+// SNN data array initialization
+Packet packet_data[NUM_CORES][1000];
+Core core_data[NUM_CORES];
 
 // Function to convert neuron_data.txt to C file
 void convertNeuronData(const char* inputFileName, const char* outputFileName) {
