@@ -45,6 +45,25 @@ int bitStringToInt(char *str, int start, int end) {
     return value;
 }
 
+// Function to convert a string of bits to a signed integer
+int bitStringToSignedInt(char *str, int start, int end) {
+    int value = 0;
+    int sign = str[start] == '1' ? -1 : 1;
+    for (int i = start; i < end; i++) {
+        value = value * 2 + (str[i] - '0');
+    }
+    return sign == -1 ? -(value & ~(1 << (end - start - 1))) : value;
+}
+
+// Function to convert a string of bits to an unsigned integer
+unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
+    unsigned int value = 0;
+    for (int i = start; i < end; i++) {
+        value = value * 2 + (str[i] - '0');
+    }
+    return value;
+}
+
 int main() {
     FILE *inputFile1, *inputFile2, *outputFile;
     char bitString[BITS_PER_NEURON + 1];
@@ -63,7 +82,7 @@ int main() {
         return 1;
     }
 
-    // Read neuron data
+    ///////////////////////////////  Read input_neuron_data.txt
     for (int core = 0; core < NUM_CORES; core++) {
         for (int neuron = 0; neuron < NEURONS_PER_CORE; neuron++) {
             if (fscanf(inputFile1, "%s", bitString) != 1) {
@@ -79,7 +98,7 @@ int main() {
             // Parse neuron data
             int baseIndex = AXONS_PER_CORE;
             cores[core].neurons[neuron].membrane_potential = bitStringToInt(bitString, baseIndex, baseIndex + 8);
-            int reset_potential = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
+            int8_t reset_potential = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
             cores[core].neurons[neuron].reset_posi_potential = reset_potential;
             cores[core].neurons[neuron].reset_nega_potential = reset_potential;
 
@@ -93,7 +112,23 @@ int main() {
             cores[core].neurons[neuron].positive_threshold = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
             cores[core].neurons[neuron].negative_threshold = bitStringToInt(bitString, baseIndex + 16, baseIndex + 24);
             baseIndex += 24;
-            cores[core].neurons[neuron].axon_dest = bitStringToInt(bitString, baseIndex, baseIndex + 8);
+            cores[core].neurons[neuron].axon_dest = bitStringToUnsignedInt(bitString, baseIndex, baseIndex + 8);
+
+            //Debug
+            if (neuron == 1 && core ==0) {
+                printf("membrane_potential: %d", cores[core].neurons[neuron].membrane_potential); printf("\n");
+                printf("reset_posi_potential: %d", cores[core].neurons[neuron].reset_posi_potential);printf("\n");
+                printf("reset_nega_potential: %d", cores[core].neurons[neuron].reset_nega_potential);printf("\n");
+                printf("weights[0]: %d", cores[core].neurons[neuron].weights[0]);printf("\n");
+                printf("weights[1]: %d", cores[core].neurons[neuron].weights[1]);printf("\n");
+                printf("weights[2]: %d", cores[core].neurons[neuron].weights[2]);printf("\n");
+                printf("weights[3]: %d", cores[core].neurons[neuron].weights[3]);printf("\n");
+                printf("leakage_value: %d", cores[core].neurons[neuron].leakage_value);printf("\n");
+                printf("positive_threshold: %d", cores[core].neurons[neuron].positive_threshold);printf("\n");
+                printf("negative_threshold: %d", cores[core].neurons[neuron].negative_threshold);printf("\n");
+                printf("axon_dest: %u", cores[core].neurons[neuron].axon_dest);printf("\n\n");
+            }
+            
         }
 
         // Convert and store synapse connections for the core
@@ -106,27 +141,59 @@ int main() {
         }
     }
 
-    // Read packet data
+    
+
+    ///////////////////////////////  Read input_packets.txt
     while (fscanf(inputFile2, "%s", bitString) == 1 && packetCount < MAX_PACKETS) {
+    // while (fscanf(inputFile2, "%s", bitString) == 1) {
         // Parse packet data
         packets[packetCount].dx = bitStringToInt(bitString, 0, 9);
+        // printf("dx: %d; ", packets[packetCount].dx);
         packets[packetCount].dy = bitStringToInt(bitString, 9, 18);
-        packets[packetCount].axon_dest = bitStringToInt(bitString, 18, 27);
+        packets[packetCount].axon_dest = bitStringToUnsignedInt(bitString, 18, 26);
         packetCount++;
     }
 
-    // Write to SNN_data.c
+    ///////////////////////////////  Write received data to SNN_data.c
+    // Write #include, #define directives and data struct definition
+    fprintf(outputFile, "#include <stdint.h>\n\n");
     fprintf(outputFile, "#include \"SNN_data.h\"\n\n");
+    fprintf(outputFile, "#define NUM_CORES %d\n", NUM_CORES);
+    fprintf(outputFile, "#define NEURONS_PER_CORE %d\n", NEURONS_PER_CORE);
+    fprintf(outputFile, "#define AXONS_PER_CORE %d\n\n", AXONS_PER_CORE);
+    fprintf(outputFile, "typedef struct {\n");
+    fprintf(outputFile, "    int8_t membrane_potential;\n");
+    fprintf(outputFile, "    int8_t reset_posi_potential;\n");
+    fprintf(outputFile, "    int8_t reset_nega_potential;\n");
+    fprintf(outputFile, "    int8_t weights[4];\n");
+    fprintf(outputFile, "    int8_t leakage_value;\n");
+    fprintf(outputFile, "    int8_t positive_threshold;\n");
+    fprintf(outputFile, "    int8_t negative_threshold;\n");
+    fprintf(outputFile, "    uint8_t axon_dest;\n");
+    fprintf(outputFile, "} Neuron;\n\n");
+    fprintf(outputFile, "typedef struct {\n");
+    fprintf(outputFile, "    Neuron neurons[NEURONS_PER_CORE];\n");
+    fprintf(outputFile, "    uint32_t synapse_connection[AXONS_PER_CORE];\n");
+    fprintf(outputFile, "} Core;\n\n");
+    fprintf(outputFile, "typedef struct {\n");
+    fprintf(outputFile, "    int8_t dx;\n");
+    fprintf(outputFile, "    int8_t dy;\n");
+    fprintf(outputFile, "    uint8_t axon_dest;\n");
+    fprintf(outputFile, "} Packet;\n\n");
+
+    // Write SNN data
     fprintf(outputFile, "Core cores[NUM_CORES] = {\n");
     for (int core = 0; core < NUM_CORES; core++) {
         fprintf(outputFile, "    { // Core %d\n", core);
         fprintf(outputFile, "        .neurons = {\n");
         for (int neuron = 0; neuron < NEURONS_PER_CORE; neuron++) {
-            Neuron n = cores[core].neurons[neuron];
+
+            
+
             fprintf(outputFile, "            { %d, %d, %d, {%d, %d, %d, %d}, %d, %d, %d, %u },\n",
-                    n.membrane_potential, n.reset_posi_potential, n.reset_nega_potential,
-                    n.weights[0], n.weights[1], n.weights[2], n.weights[3],
-                    n.leakage_value, n.positive_threshold, n.negative_threshold, n.axon_dest);
+                    cores[core].neurons[neuron].membrane_potential, cores[core].neurons[neuron].reset_posi_potential, cores[core].neurons[neuron].reset_nega_potential,
+                    cores[core].neurons[neuron].weights[0], cores[core].neurons[neuron].weights[1], cores[core].neurons[neuron].weights[2], cores[core].neurons[neuron].weights[3],
+                    cores[core].neurons[neuron].leakage_value, cores[core].neurons[neuron].positive_threshold, cores[core].neurons[neuron].negative_threshold, cores[core].neurons[neuron].axon_dest);
         }
         fprintf(outputFile, "        },\n");
         fprintf(outputFile, "        .synapse_connection = {\n");
@@ -140,8 +207,14 @@ int main() {
 
     fprintf(outputFile, "Packet packets[%d] = {\n", packetCount);
     for (int i = 0; i < packetCount; i++) {
-        Packet p = packets[i];
-        fprintf(outputFile, "    { %u, %d, %d },\n", p.axon_dest, p.dx, p.dy);
+        // Packet &p = packets[i]; // C doesn't have references, cannot use!!!
+
+        // //Debug 
+        // for (int i=0; i< 10; i++) {
+        //     printf("Packet %d: {}")
+        // }
+
+        fprintf(outputFile, "    { %u, %d, %d },\n", packets[i].dx, packets[i].dy, packets[i].axon_dest);
     }
     fprintf(outputFile, "};\n");
 
