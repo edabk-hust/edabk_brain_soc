@@ -36,9 +36,19 @@ typedef struct {
     uint8_t axon_dest;
 } Packet;
 
-// Function to convert a string of bits to an integer
-int bitStringToInt(char *str, int start, int end) {
+// Function to convert a string of bits to a signed integer
+int bitStringToSignedInt(char *str, int start, int end) {
     int value = 0;
+    int sign = str[start] == '1' ? -1 : 1;
+    for (int i = start; i < end; i++) {
+        value = value * 2 + (str[i] - '0');
+    }
+    return sign == -1 ? -(value & ~(1 << (end - start - 1))) : value;
+}
+
+// Function to convert a string of bits to an unsigned integer
+unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
+    unsigned int value = 0;
     for (int i = start; i < end; i++) {
         value = value * 2 + (str[i] - '0');
     }
@@ -78,22 +88,22 @@ int main() {
 
             // Parse neuron data
             int baseIndex = AXONS_PER_CORE;
-            cores[core].neurons[neuron].membrane_potential = bitStringToInt(bitString, baseIndex, baseIndex + 8);
-            int reset_potential = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
+            cores[core].neurons[neuron].membrane_potential = bitStringToSignedInt(bitString, baseIndex, baseIndex + 8);
+            int reset_potential = bitStringToSignedInt(bitString, baseIndex + 8, baseIndex + 16);
             cores[core].neurons[neuron].reset_posi_potential = reset_potential;
             cores[core].neurons[neuron].reset_nega_potential = reset_potential;
 
             baseIndex += 16;
             for (int i = 0; i < 4; i++) {
-                cores[core].neurons[neuron].weights[i] = bitStringToInt(bitString, baseIndex + i * 8, baseIndex + 8 + i * 8);
+                cores[core].neurons[neuron].weights[i] = bitStringToSignedInt(bitString, baseIndex + i * 8, baseIndex + 8 + i * 8);
             }
 
             baseIndex += 32;
-            cores[core].neurons[neuron].leakage_value = bitStringToInt(bitString, baseIndex, baseIndex + 8);
-            cores[core].neurons[neuron].positive_threshold = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
-            cores[core].neurons[neuron].negative_threshold = bitStringToInt(bitString, baseIndex + 16, baseIndex + 24);
+            cores[core].neurons[neuron].leakage_value = bitStringToSignedInt(bitString, baseIndex, baseIndex + 8);
+            cores[core].neurons[neuron].positive_threshold = bitStringToSignedInt(bitString, baseIndex + 8, baseIndex + 16);
+            cores[core].neurons[neuron].negative_threshold = bitStringToSignedInt(bitString, baseIndex + 16, baseIndex + 24);
             baseIndex += 24;
-            cores[core].neurons[neuron].axon_dest = bitStringToInt(bitString, baseIndex, baseIndex + 8);
+            cores[core].neurons[neuron].axon_dest = bitStringToUnsignedInt(bitString, baseIndex, baseIndex + 8);
         }
 
         // Convert and store synapse connections for the core
@@ -107,11 +117,13 @@ int main() {
     }
 
     // Read packet data
-    while (fscanf(inputFile2, "%s", bitString) == 1 && packetCount < MAX_PACKETS) {
+    // while (fscanf(inputFile2, "%s", bitString) == 1 && packetCount < MAX_PACKETS) {
+    while (fscanf(inputFile2, "%s", bitString) == 1) {
         // Parse packet data
-        packets[packetCount].dx = bitStringToInt(bitString, 0, 9);
-        packets[packetCount].dy = bitStringToInt(bitString, 9, 18);
-        packets[packetCount].axon_dest = bitStringToInt(bitString, 18, 27);
+        packets[packetCount].dx = bitStringToSignedInt(bitString, 0, 9);
+        // printf("dx: %d; ", packets[packetCount].dx);
+        packets[packetCount].dy = bitStringToSignedInt(bitString, 9, 18);
+        packets[packetCount].axon_dest = bitStringToUnsignedInt(bitString, 18, 26);
         packetCount++;
     }
 
@@ -141,7 +153,7 @@ int main() {
     fprintf(outputFile, "Packet packets[%d] = {\n", packetCount);
     for (int i = 0; i < packetCount; i++) {
         Packet p = packets[i];
-        fprintf(outputFile, "    { %u, %d, %d },\n", p.axon_dest, p.dx, p.dy);
+        fprintf(outputFile, "    { %u, %d, %d },\n", p.dx, p.dy, p.axon_dest);
     }
     fprintf(outputFile, "};\n");
 
