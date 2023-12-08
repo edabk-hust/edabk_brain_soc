@@ -19,7 +19,7 @@ typedef struct {
 ////////////////////////////////////////////// Core data structure
 typedef struct {
     Neuron neurons[NEURONS_PER_CORE];                   // Neurons in the core
-    uint8_t instruction[AXONS_PER_CORE];                // Instruction (2-bit) for axon to choose 1 in 4 weights
+    // uint8_t instruction[AXONS_PER_CORE];                // Instruction (2-bit) for axon to choose 1 in 4 weights
     uint32_t synapse_connection[AXONS_PER_CORE];        // A (256 x 32) binary matrix to represent synaptic connection
 } Core;
 

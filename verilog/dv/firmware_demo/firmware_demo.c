@@ -86,6 +86,41 @@ void send_neuron_params_to_mem(uint8_t core_index, volatile uint32_t* base_addr)
     }
 }
 
+void read_neuron_params_from_mem(uint8_t core_index, volatile uint32_t* base_addr) {
+    // Assuming core_index is within valid range (0 to NUM_CORES - 1)
+
+    // Calculate the offset based on the core_index and adjusted formula
+    uint32_t offset = core_index * (11 * NEURONS_PER_CORE);
+
+    // Read neuron parameters from memory in 32-bit batches
+    for (uint32_t i = 0; i < NEURONS_PER_CORE; ++i) {
+        Neuron* current_neuron = &core_data[core_index].neurons[i];
+
+        // Calculate the offset for the current neuron
+        uint32_t neuron_offset = offset + i * 11 * 4;  // Multiply by 4 for each 32-bit word
+
+        // Read the concatenated batches from memory
+        uint32_t batch1 = read32Batch(base_addr + neuron_offset, 0);
+        uint32_t batch2 = read32Batch(base_addr + neuron_offset + 1, 0);
+        uint32_t batch3 = read32Batch(base_addr + neuron_offset + 2, 0);
+
+        // Extract individual parameters from batches
+        current_neuron->leakage_value = (int8_t)(batch1 >> 24);
+        current_neuron->negative_threshold = (int8_t)((batch1 >> 16) & 0xFF);
+        current_neuron->positive_threshold = (int8_t)((batch1 >> 8) & 0xFF);
+        current_neuron->membrane_potential = (int8_t)(batch1 & 0xFF);
+
+        current_neuron->weights[3] = (int8_t)(batch2 >> 24);
+        current_neuron->weights[2] = (int8_t)((batch2 >> 16) & 0xFF);
+        current_neuron->weights[1] = (int8_t)((batch2 >> 8) & 0xFF);
+        current_neuron->weights[0] = (int8_t)(batch2 & 0xFF);
+
+        current_neuron->reset_nega_potential = (int8_t)(batch3 >> 24);
+        current_neuron->reset_posi_potential = (int8_t)((batch3 >> 16) & 0xFF);
+        current_neuron->axon_dest = (uint8_t)(batch3 & 0xFF);
+    }
+}
+
 
 void main() {    
 
@@ -131,6 +166,6 @@ void main() {
     // Flag start of the test
 	reg_mprj_datal = 0xAB600000;
 
-    
+    /* SEND NEURON_DATA OF A CORE TO MEM */
 
 }
