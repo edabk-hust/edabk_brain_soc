@@ -55,24 +55,24 @@ unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
     return value;
 }
 
-// Function to convert a string of bits to a signed integer
-int bitStringToSignedInt(char *str, int start, int end) {
-    int value = 0;
-    int sign = str[start] == '1' ? -1 : 1;
-    for (int i = start; i < end; i++) {
-        value = value * 2 + (str[i] - '0');
-    }
-    return sign == -1 ? -(value & ~(1 << (end - start - 1))) : value;
-}
+// // Function to convert a string of bits to a signed integer
+// int bitStringToSignedInt(char *str, int start, int end) {
+//     int value = 0;
+//     int sign = str[start] == '1' ? -1 : 1;
+//     for (int i = start; i < end; i++) {
+//         value = value * 2 + (str[i] - '0');
+//     }
+//     return sign == -1 ? -(value & ~(1 << (end - start - 1))) : value;
+// }
 
-// Function to convert a string of bits to an unsigned integer
-unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
-    unsigned int value = 0;
-    for (int i = start; i < end; i++) {
-        value = value * 2 + (str[i] - '0');
-    }
-    return value;
-}
+// // Function to convert a string of bits to an unsigned integer
+// unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
+//     unsigned int value = 0;
+//     for (int i = start; i < end; i++) {
+//         value = value * 2 + (str[i] - '0');
+//     }
+//     return value;
+// }
 
 int main() {
     FILE *inputFile1, *inputFile2, *outputFile;
@@ -217,13 +217,6 @@ int main() {
 
     fprintf(outputFile, "Packet packets[%d] = {\n", packetCount);
     for (int i = 0; i < packetCount; i++) {
-        // Packet &p = packets[i]; // C doesn't have references, cannot use!!!
-
-        // //Debug 
-        // for (int i=0; i< 10; i++) {
-        //     printf("Packet %d: {}")
-        // }
-
         fprintf(outputFile, "    { %u, %d, %d },\n", packets[i].dx, packets[i].dy, packets[i].axon_dest);
     }
     fprintf(outputFile, "};\n");

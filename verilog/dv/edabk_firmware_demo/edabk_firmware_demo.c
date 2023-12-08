@@ -1,3 +1,5 @@
+
+
 /* User Project Memory Mapping 
     => the #define directives help in creating symbolic names for memory addresses
 
@@ -11,11 +13,22 @@
     | 0x300040F0 - 0x300040FB| param31                |
     | 0x30008000 - 0x30008003| neuron_spike_out       |
 */
+
+// This include is relative to $CARAVEL_PATH (see Makefile)
+#include <defs.h>
+#include <stub.c>
+
+#include <stdint.h>
+#include "SNN_data.h"
+
+#define NUM_CORES 5
+#define NEURONS_PER_CORE 32
+#define AXONS_PER_CORE 256
+
 #define SYNAP_MATRIX_BASE       0x30000000
 #define PARAM_BASE              0x30004000
 #define NEURON_SPIKE_OUT_BASE   0x30008000
 
-#include "SNN_data.h"
 
 /* Pointers for User Project Memory Mapping 
     - Each pointer is assigned to the corresponding user project address on the wishbone bus
@@ -46,7 +59,7 @@ void send_synapse_connection_to_mem(uint8_t core_index, volatile uint32_t* base_
 
     // Send synapse connection data to memory in 32-bit batch
     for (uint32_t i = 0; i < AXONS_PER_CORE; ++i) {
-        uint32_t synapse_connection_value = core_data[core_index].synapse_connection[i];
+        uint32_t synapse_connection_value = cores[core_index].synapse_connection[i];
         write_32_bit_to_mem(base_addr, offset + i * 4, synapse_connection_value);
     }
 }
@@ -59,7 +72,7 @@ void send_neuron_params_to_mem(uint8_t core_index, volatile uint32_t* base_addr)
 
     // Send neuron parameters to memory in 32-bit batches
     for (uint32_t i = 0; i < NEURONS_PER_CORE; ++i) {
-        Neuron* current_neuron = &core_data[core_index].neurons[i];
+        Neuron* current_neuron = &cores[core_index].neurons[i];
 
         // Calculate the offset for the current neuron
         uint32_t neuron_offset = offset + i * 11;
@@ -94,15 +107,15 @@ void read_neuron_params_from_mem(uint8_t core_index, volatile uint32_t* base_add
 
     // Read neuron parameters from memory in 32-bit batches
     for (uint32_t i = 0; i < NEURONS_PER_CORE; ++i) {
-        Neuron* current_neuron = &core_data[core_index].neurons[i];
+        Neuron* current_neuron = &cores[core_index].neurons[i];
 
         // Calculate the offset for the current neuron
-        uint32_t neuron_offset = offset + i * 11 * 4;  // Multiply by 4 for each 32-bit word
+        uint32_t neuron_offset = offset + i * 11;
 
         // Read the concatenated batches from memory
-        uint32_t batch1 = read32Batch(base_addr + neuron_offset, 0);
-        uint32_t batch2 = read32Batch(base_addr + neuron_offset + 1, 0);
-        uint32_t batch3 = read32Batch(base_addr + neuron_offset + 2, 0);
+        uint32_t batch1 = read_32bit_from_mem(base_addr + neuron_offset, 0);
+        uint32_t batch2 = read_32bit_from_mem(base_addr + neuron_offset + 4, 0);
+        uint32_t batch3 = read_32bit_from_mem(base_addr + neuron_offset + 8, 0);
 
         // Extract individual parameters from batches
         current_neuron->leakage_value = (int8_t)(batch1 >> 24);
@@ -167,5 +180,6 @@ void main() {
 	reg_mprj_datal = 0xAB600000;
 
     /* SEND NEURON_DATA OF A CORE TO MEM */
-
+    send_synapse_connection_to_mem(0, SYNAP_MATRIX_PTR);
+    reg_mprj_datal = 0xAB610000;
 }
