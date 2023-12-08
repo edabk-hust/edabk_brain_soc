@@ -36,25 +36,6 @@ typedef struct {
     uint8_t axon_dest;
 } Packet;
 
-// Function to convert a string of bits to a signed integer
-int bitStringToSignedInt(char *str, int start, int end) {
-    int value = 0;
-    int sign = str[start] == '1' ? -1 : 1;
-    for (int i = start; i < end; i++) {
-        value = value * 2 + (str[i] - '0');
-    }
-    return sign == -1 ? -(value & ~(1 << (end - start - 1))) : value;
-}
-
-// Function to convert a string of bits to an unsigned integer
-unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
-    unsigned int value = 0;
-    for (int i = start; i < end; i++) {
-        value = value * 2 + (str[i] - '0');
-    }
-    return value;
-}
-
 // // Function to convert a string of bits to a signed integer
 // int bitStringToSignedInt(char *str, int start, int end) {
 //     int value = 0;
@@ -73,6 +54,15 @@ unsigned int bitStringToUnsignedInt(char *str, int start, int end) {
 //     }
 //     return value;
 // }
+
+// Function to convert a string of bits to an integer
+int bitStringToInt(char *str, int start, int end) {
+    int value = 0;
+    for (int i = start; i < end; i++) {
+        value = value * 2 + (str[i] - '0');
+    }
+    return value;
+}
 
 int main() {
     FILE *inputFile1, *inputFile2, *outputFile;
@@ -114,15 +104,15 @@ int main() {
 
             baseIndex += 16;
             for (int i = 0; i < 4; i++) {
-                cores[core].neurons[neuron].weights[i] = bitStringToSignedInt(bitString, baseIndex + i * 8, baseIndex + 8 + i * 8);
+                cores[core].neurons[neuron].weights[i] = bitStringToInt(bitString, baseIndex + i * 8, baseIndex + 8 + i * 8);
             }
 
             baseIndex += 32;
-            cores[core].neurons[neuron].leakage_value = bitStringToSignedInt(bitString, baseIndex, baseIndex + 8);
-            cores[core].neurons[neuron].positive_threshold = bitStringToSignedInt(bitString, baseIndex + 8, baseIndex + 16);
-            cores[core].neurons[neuron].negative_threshold = bitStringToSignedInt(bitString, baseIndex + 16, baseIndex + 24);
+            cores[core].neurons[neuron].leakage_value = bitStringToInt(bitString, baseIndex, baseIndex + 8);
+            cores[core].neurons[neuron].positive_threshold = bitStringToInt(bitString, baseIndex + 8, baseIndex + 16);
+            cores[core].neurons[neuron].negative_threshold = bitStringToInt(bitString, baseIndex + 16, baseIndex + 24);
             baseIndex += 24;
-            cores[core].neurons[neuron].axon_dest = bitStringToUnsignedInt(bitString, baseIndex, baseIndex + 8);
+            cores[core].neurons[neuron].axon_dest = bitStringToInt(bitString, baseIndex, baseIndex + 8);
 
             //Debug
             if (neuron == 1 && core ==0) {
@@ -160,7 +150,7 @@ int main() {
         packets[packetCount].dx = bitStringToInt(bitString, 0, 9);
         // printf("dx: %d; ", packets[packetCount].dx);
         packets[packetCount].dy = bitStringToInt(bitString, 9, 18);
-        packets[packetCount].axon_dest = bitStringToUnsignedInt(bitString, 18, 26);
+        packets[packetCount].axon_dest = bitStringToInt(bitString, 18, 26);
         packetCount++;
     }
 
