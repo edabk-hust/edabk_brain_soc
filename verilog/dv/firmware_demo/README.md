@@ -7,8 +7,8 @@ We run the `stimulus.c` file to process `neuron_data.txt` file as input, which c
     
 After the core returns output_spike of 32 neurons (via Wishbone bus), the C Code would save the output_spike into a Queue and repeat the above steps (send data of a virtual core to SoC => send input spike of that core to SoC => save returned output_spike )
 
-### `neuron_data.txt`
-- The neuron_data.txt file contains 160 lines, grouped into 5 cores (each core has 32 neurons => 32 lines)
+### `input_neuron_data.txt`
+- The `input_neuron_data.txt` file contains 160 lines, grouped into 5 cores (each core has 32 neurons => 32 lines)
 - Each line has total 336-bits, containing information of 1 neuron
     + 256-bit: synap connection (will be sent to synapse_matrix of DUT)
     + **Next 80-bit will be processed to send 11 fields to neuron_parameter of DUT**
@@ -26,6 +26,15 @@ After the core returns output_spike of 32 neurons (via Wishbone bus), the C Code
         + (9)8-bit: positive_threshold
         + (10)8-bit: negative_threshold
         + (11)8-bit: destination_axon
+
+### `input_packets.txt`
+- The `input_packets.txt` file contains input packets that are sent to the neuron cores.
+- Each line has total 30-bits, containing information of a packet:
+    + (1) 9-bit: dx
+    + (2) 9-bit: dy
+    (dx, dy) are vector coordinates 
+    + (3) 8-bit: axon destination
+    + (4) 4-bit: tick instance (can be discarded)
     
     
 
