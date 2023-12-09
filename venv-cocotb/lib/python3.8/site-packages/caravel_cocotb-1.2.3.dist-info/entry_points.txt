@@ -1,0 +1,3 @@
+[console_scripts]
+caravel_cocotb = caravel_cocotb.__main__:main
+

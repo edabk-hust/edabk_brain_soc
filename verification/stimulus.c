@@ -282,7 +282,7 @@ Queue* loadSpikesToQueue(const char* input_spike[NUM_CORES]) {
             }
         }
 
-        // Ghi tổng vào đầu file cho từng core
+        // Convert input_spikes bits into the position index = index of synapse connection
         fprintf(output_file, "%d\n", total_spikes);
 
         for (int axon = 0; axon < AXONS; axon++) {

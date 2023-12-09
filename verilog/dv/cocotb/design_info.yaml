@@ -1,8 +1,8 @@
-CARAVEL_ROOT: /home/edabk/efabless/caravel_user_project/caravel
-MCW_ROOT: /home/edabk/efabless/caravel_user_project/mgmt_core_wrapper
+CARAVEL_ROOT: /workspace/edabk_brain_soc/caravel
+MCW_ROOT: /workspace/edabk_brain_soc/mgmt_core_wrapper
 PDK: sky130A
-PDK_ROOT: /home/edabk/.volare
-USER_PROJECT_ROOT: /home/edabk/efabless/caravel_user_project
+PDK_ROOT: /workspace/edabk_brain_soc/dependencies/pdks
+USER_PROJECT_ROOT: /workspace/edabk_brain_soc
 caravan: false
 clk: 25
 emailto:

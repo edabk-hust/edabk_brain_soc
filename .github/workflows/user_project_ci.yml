@@ -124,6 +124,7 @@ jobs:
           make verify-la_test2-rtl 
           make verify-mprj_stimulus-rtl 
           make verify-wb_port-rtl
+          make verify-firmware_demo-rtl
 
       # - name: Run DV GL tests
       #   run: |
@@ -132,3 +133,4 @@ jobs:
       #     make verify-la_test2-gl 
       #     make verify-mprj_stimulus-gl 
       #     make verify-wb_port-gl
+      #     make verify-firmware_demo
