@@ -16,7 +16,7 @@ module synapse_matrix (
 );
 
 parameter BASE_ADDR = 32'h30000000;
-reg [31:0] sram [255:0];         // SRAM storage for 256 words
+reg [31:0] sram [255:0];         // SRAM storage for 32-bit word, total 256 words
 wire [31:0] address;              // Calculated from the input address
 
 // Continuous assignment for address computation
