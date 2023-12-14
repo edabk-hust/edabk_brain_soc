@@ -63,7 +63,7 @@ typedef struct {
     uint8_t axon_dest;
 } Packet;
 
-Core cores[NUM_CORES] = {
+const Core cores[NUM_CORES] = {
     { // Core 0
         .neurons = {
             { 0, 0, 0, {1, -1, 1, -1}, 0, 0, 0, 0 },
