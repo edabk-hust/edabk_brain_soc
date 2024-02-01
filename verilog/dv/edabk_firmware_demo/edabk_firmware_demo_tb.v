@@ -144,7 +144,7 @@ module edabk_firmware_demo_tb;
 		$dumpvars(0, edabk_firmware_demo_tb);
 
 		// Repeat cycles of 1000 clock edges as needed to complete testbench
-		repeat (70) begin
+		repeat (700) begin
 			repeat (1000) @(posedge clock);
 			// $display("+1000 cycles");
 		end

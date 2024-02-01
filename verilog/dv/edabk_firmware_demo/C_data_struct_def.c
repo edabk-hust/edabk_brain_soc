@@ -32,5 +32,5 @@ typedef struct {
 } Packet;
 
 // SNN data array initialization
-Packet packet_data[NUM_CORES][1000];
+Packet packet_data[1024];
 Core core_data[NUM_CORES];
