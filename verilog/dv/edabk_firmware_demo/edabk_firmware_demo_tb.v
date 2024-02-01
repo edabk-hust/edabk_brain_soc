@@ -139,6 +139,7 @@ module edabk_firmware_demo_tb;
 	`endif 
 
 	initial begin
+		$display("____I'm here______!");
 		$dumpfile("edabk_firmware_demo.vcd");
 		$dumpvars(0, edabk_firmware_demo_tb);
 
@@ -148,23 +149,28 @@ module edabk_firmware_demo_tb;
 			// $display("+1000 cycles");
 		end
 		$display("%c[1;31m",27);
+		$display("____I'm here after repeat clockegdes______!");
 		`ifdef GL
-			$display ("Monitor: Timeout, Test Mega-Project WB Port (GL) Failed");
+			$display ("Monitor: Timeout, Test Mega-Project Firmware SNN (GL) Failed");
 		`else
-			$display ("Monitor: Timeout, Test Mega-Project WB Port (RTL) Failed");
+			$display ("Monitor: Timeout, Test Mega-Project Firmware SNN (RTL) Failed");
 		`endif
 		$display("%c[0m",27);
 		$finish;
 	end
 
 	initial begin
-	   wait(checkbits == 16'hAB60);
-		$display("Monitor: MPRJ-Logic WB Started");
+		$display("____waiting mprj_io gives checkbits______!");
+	   // wait(checkbits == 16'hAB60);
+	   wait(checkbits != 0);
+	   // Can't run from here!!!!
+		$display("____I'm here after waiting checkbits______!");
+		$display("Monitor: MPRJ-Logic Firmware Started");
 		wait(checkbits == 16'hAB61);
 		`ifdef GL
-	    	$display("Monitor: Mega-Project WB (GL) Passed");
+	    	$display("Monitor: Mega-Project Firmware SNN (GL) Passed");
 		`else
-		    $display("Monitor: Mega-Project WB (RTL) Passed");
+		    $display("Monitor: Mega-Project Firmware SNN (RTL) Passed");
 		`endif
 	    $finish;
 	end

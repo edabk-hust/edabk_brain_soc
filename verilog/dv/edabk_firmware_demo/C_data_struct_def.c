@@ -1,3 +1,4 @@
+#include <stdint.h>
 #define NUM_CORES 5
 #define NEURONS_PER_CORE 32
 #define AXONS_PER_CORE 256

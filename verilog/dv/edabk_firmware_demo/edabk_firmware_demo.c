@@ -13,17 +13,19 @@
     | 0x300040F0 - 0x300040FB| param31                |
     | 0x30008000 - 0x30008003| neuron_spike_out       |
 */
-
-// This include is relative to $CARAVEL_PATH (see Makefile)
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
 #include <defs.h>
 #include <stub.c>
-
+#include <stdlib.h>
 #include <stdint.h>
 // #include "SNN_data.h"
 
 #define NUM_CORES 2
 #define NEURONS_PER_CORE 32
 #define AXONS_PER_CORE 256
+#define ITER_VIRTUAL 8
 
 #define SYNAP_MATRIX_BASE       0x30000000
 #define PARAM_BASE              0x30004000
@@ -42,6 +44,12 @@
 
 /* PASTE SNN_DATA HERE */
 typedef struct {
+    int front, rear, size;
+    unsigned capacity;
+    int array[100];
+} Queue;
+
+typedef struct {
     int8_t membrane_potential;
     int8_t reset_posi_potential;
     int8_t reset_nega_potential;
@@ -55,6 +63,8 @@ typedef struct {
 typedef struct {
     Neuron neurons[NEURONS_PER_CORE];
     uint32_t synapse_connection[AXONS_PER_CORE];
+    Queue spikeQueue;
+    Queue output_axons;
 } Core;
 
 typedef struct {
@@ -63,7 +73,12 @@ typedef struct {
     uint8_t axon_dest;
 } Packet;
 
-Core cores[NUM_CORES] = {
+// Dynamic part
+int dynamic_membrane_potential[NUM_CORES][32]= {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+                                         };
+// Static parts
+const Core virtual_core[NUM_CORES] = {
     { // Core 0
         .neurons = {
             { 0, 0, 0, {1, -1, 1, -1}, 0, 0, 0, 0 },
@@ -656,8 +671,11 @@ Core cores[NUM_CORES] = {
 
 /* FUNCTIONS FOR READ/WRITE OPERATION VIA WB PORT */
 
-uint32_t read_32bit_from_mem(const volatile uint32_t* base, uint32_t offset) {
-    return *(base + offset);
+uint32_t read_32bit_from_mem(const volatile uint32_t* addr) {
+    return *(volatile uint32_t *) addr;
+}
+uint8_t read_8bit_from_mem(const volatile uint32_t* addr) {
+    return *(volatile uint8_t *) addr;
 }
 
 void write_32_bit_to_mem(volatile uint32_t* base, uint32_t offset, uint32_t data) {
@@ -666,37 +684,33 @@ void write_32_bit_to_mem(volatile uint32_t* base, uint32_t offset, uint32_t data
 
 /* FUNCTIONS FOR SENDING NEURON_DATA TO SOC */
 
-void send_synapse_connection_to_mem(uint8_t core_index, volatile uint32_t* base_addr) {
-    // Assuming core_index is within valid range (0 to NUM_CORES - 1)
-
-    // Calculate the offset based on the core_index
-    uint32_t offset = core_index * (4 * AXONS_PER_CORE);
+void send_synapse_connection_to_mem(uint8_t vt_core_index, volatile uint32_t* base_addr) {
+    // Assuming vt_core_index is within valid range (0 to NUM_CORES - 1)
 
     // Send synapse connection data to memory in 32-bit batch
     for (uint32_t i = 0; i < AXONS_PER_CORE; ++i) {
-        uint32_t synapse_connection_value = cores[core_index].synapse_connection[i];
-        write_32_bit_to_mem(base_addr, offset + i * 4, synapse_connection_value);
+        // Calculate the offset based on the index
+        uint32_t offset = 4 * i;
+        uint32_t synapse_connection_value = virtual_core[vt_core_index].synapse_connection[i];
+        write_32_bit_to_mem(base_addr, offset, synapse_connection_value);
     }
 }
 
-void send_neuron_params_to_mem(uint8_t core_index, volatile uint32_t* base_addr) {
-    // Assuming core_index is within valid range (0 to NUM_CORES - 1)
-
-    // Calculate the offset based on the core_index and adjusted formula
-    uint32_t offset = core_index * (11 * NEURONS_PER_CORE);
+void send_neuron_params_to_mem(uint8_t vt_core_index, volatile uint32_t* base_addr) {
+    // Assuming vt_core_index is within valid range (0 to NUM_CORES - 1)
 
     // Send neuron parameters to memory in 32-bit batches
     for (uint32_t i = 0; i < NEURONS_PER_CORE; ++i) {
-        Neuron* current_neuron = &cores[core_index].neurons[i];
+        Neuron* current_neuron = &virtual_core[vt_core_index].neurons[i];
 
         // Calculate the offset for the current neuron
-        uint32_t neuron_offset = offset + i * 11;
+        uint32_t neuron_offset = i * 16;
 
         // Concatenate parameters based on reversed hardware bit order
         uint32_t batch1 = ((uint32_t)current_neuron->leakage_value << 24) |
                           ((uint32_t)current_neuron->negative_threshold << 16) |
                           ((uint32_t)current_neuron->positive_threshold << 8) |
-                          (uint32_t)current_neuron->membrane_potential;
+                          ((uint32_t)dynamic_membrane_potential[vt_core_index]);
 
         uint32_t batch2 = ((uint32_t)current_neuron->weights[3] << 24) |
                           ((uint32_t)current_neuron->weights[2] << 16) |
@@ -714,23 +728,20 @@ void send_neuron_params_to_mem(uint8_t core_index, volatile uint32_t* base_addr)
     }
 }
 
-void read_neuron_params_from_mem(uint8_t core_index, volatile uint32_t* base_addr) {
-    // Assuming core_index is within valid range (0 to NUM_CORES - 1)
-
-    // Calculate the offset based on the core_index and adjusted formula
-    uint32_t offset = core_index * (11 * NEURONS_PER_CORE);
+void read_neuron_params_from_mem(uint8_t vt_core_index, volatile uint32_t* base_addr) {
+    // Assuming vt_core_index is within valid range (0 to NUM_CORES - 1)
 
     // Read neuron parameters from memory in 32-bit batches
     for (uint32_t i = 0; i < NEURONS_PER_CORE; ++i) {
-        Neuron* current_neuron = &cores[core_index].neurons[i];
+        Neuron* current_neuron = &virtual_core[vt_core_index].neurons[i];
 
         // Calculate the offset for the current neuron
-        uint32_t neuron_offset = offset + i * 11;
+        uint32_t neuron_offset = i * 16;
 
         // Read the concatenated batches from memory
-        uint32_t batch1 = read_32bit_from_mem(base_addr + neuron_offset, 0);
-        uint32_t batch2 = read_32bit_from_mem(base_addr + neuron_offset + 4, 0);
-        uint32_t batch3 = read_32bit_from_mem(base_addr + neuron_offset + 8, 0);
+        uint32_t batch1 = read_32bit_from_mem(base_addr + neuron_offset);
+        uint32_t batch2 = read_32bit_from_mem(base_addr + neuron_offset + 4);
+        uint32_t batch3 = read_32bit_from_mem(base_addr + neuron_offset + 8);
 
         // Extract individual parameters from batches
         current_neuron->leakage_value = (int8_t)(batch1 >> 24);
@@ -748,7 +759,118 @@ void read_neuron_params_from_mem(uint8_t core_index, volatile uint32_t* base_add
         current_neuron->axon_dest = (uint8_t)(batch3 & 0xFF);
     }
 }
+/* OUTPUT SPIKES CALCULATION */
+// Queue* createQueue(unsigned capacity) {
+//     Queue* queue = (Queue*)malloc(sizeof(Queue));
+//     queue->capacity = capacity;
+//     queue->front = queue->size = 0; 
+//     queue->rear = capacity - 1;
+//     queue->array = (int*)malloc(queue->capacity * sizeof(int));
+//     return queue;
+// }
+Queue createQueue(unsigned capacity) {
+    Queue queue;
+    queue.front = queue.size = 0;
+    queue.rear = capacity - 1;
+    queue.capacity = capacity;
+    return queue;
+}
 
+int isFull(Queue queue) { return (queue.size == queue.capacity); }
+int isEmpty(Queue queue) { return (queue.size == 0); }
+
+// void enqueue(Queue queue, int item) {
+//     if (isFull(queue)) {
+//         return;
+//     }
+//     queue.rear = (queue.rear + 1) % queue.capacity;
+//     queue.array[queue.rear] = item;
+//     queue.size++;
+// }
+void enqueue(Queue queue, int item) {
+    if (isFull(queue)) {
+        return;
+    }
+    // Increment rear with wrap-around if necessary
+    queue.rear = (queue.rear + 1 == queue.capacity) ? 0 : queue.rear + 1;
+
+    queue.array[queue.rear] = item;
+    queue.size++;
+}
+
+
+// int dequeue(Queue queue) {
+//     if (isEmpty(queue)) return -1;
+//     int item = queue.array[queue.front];
+//     queue.front = (queue.front + 1) % queue.capacity;
+//     queue.size = queue.size - 1;
+//     return item;
+// }
+int dequeue(Queue queue) {
+    if (isEmpty(queue)){
+        return -1;
+    }
+    int item = queue.array[queue.front];
+    
+    // Increment front with wrap-around if necessary
+    queue.front = (queue.front + 1 == queue.capacity) ? 0 : queue.front + 1;
+    queue.size = queue.size - 1;
+    return item;
+}
+
+int front(Queue queue) {
+    if (isEmpty(queue)) return -1;
+    return queue.array[queue.front];
+}
+
+void pushLargerQueue(Queue largerQueue, Queue queues)
+{
+    while(!isEmpty(queues))
+    {
+        int item = dequeue(queues);
+        enqueue(largerQueue, item);
+    }
+}
+
+/* Bây giờ sẽ viết tiếp hàm yêu cầu slave (DUT) đọc output spikes và lưu thành 1 queue để so sánh với output spikes của file SNN software => DONE */
+// Q_Packet là queue lưu trữ các packet thuộc về 1 core được phân loại bởi code C software <Hưng> 
+void OutputSpike2Queue(Queue queue)  
+{   
+    // Đọc output từ cả 4 thanh ghi 8000-8003 
+    uint8_t part0 = read_8bit_from_mem((volatile uint32_t *) NEURON_SPIKE_OUT_BASE + 0);
+    uint8_t part1 = read_8bit_from_mem((volatile uint32_t *) NEURON_SPIKE_OUT_BASE + 1);
+    uint8_t part2 = read_8bit_from_mem((volatile uint32_t *) NEURON_SPIKE_OUT_BASE + 2);
+    uint8_t part3 = read_8bit_from_mem((volatile uint32_t *) NEURON_SPIKE_OUT_BASE + 3);
+    uint32_t output = ((uint32_t)part3 << 24) | ((uint32_t)part2 << 16) | ((uint32_t)part1 << 8) | ((uint32_t)part0);
+
+    enqueue(queue, output);
+    
+}
+
+// Hàm xử lý 1 lần core vật lý 256x256 
+// Queue: EmbeddedQueue[4] : lưu các axon_dest đã được xử lý dx dy và phân loại theo core ở bên software
+void Core0_256_256(Queue EmbeddedQueue[]){
+    // Tạo một queue lớn để stored 8 queue nhỏ (kết quả output từng virtual core 256x32) tương đương với 1 core 256x256
+    Queue queue_output = createQueue(100);
+    for (int i = 0; i < ITER_VIRTUAL; i++){
+        // WRITE
+        send_synapse_connection_to_mem(i, (volatile uint32_t*) SYNAP_MATRIX_BASE);
+        send_neuron_params_to_mem(i, (volatile uint32_t*) PARAM_BASE);
+
+        // Gửi các axon_dest được lưu tại EmbeddedQueue cho DUT
+        while (isEmpty(EmbeddedQueue[i]))
+        {   
+            int step = dequeue(EmbeddedQueue[i]);
+            uint32_t offset = (uint32_t)(4 * step);
+            uint32_t synapse_con = read_32bit_from_mem((volatile uint32_t *) SYNAP_MATRIX_BASE + offset);
+        }
+        // READ
+        // Sau khi đẩy hết packets có trong queue, master mới yêu cầu READ output spikes
+        OutputSpike2Queue(virtual_core[i].output_axons); // đưa output vào queue để phục vụ checking sau.
+        pushLargerQueue(queue_output, virtual_core[i].output_axons);
+    }
+    // Sau vòng for này sẽ có 1 queue lưu output_axon <256-bit>
+}
 
 void main() {    
 
@@ -781,6 +903,7 @@ void main() {
     (reg_mprj_xfer=1) and wait till it finishes (reg_mprj_xfer == 0)*/
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
+	reg_la2_oenb = reg_la2_iena = 0x00000000;    // [95:64]
 
     ////////////////////////////////// 
 
@@ -789,12 +912,10 @@ void main() {
     uint32_t paramValue = *PARAM_PTR;
     uint32_t neuronSpikeOutValue = *NEURON_SPIKE_OUT_PTR;
 
-    // 
-
-    // Flag start of the test
-	reg_mprj_datal = 0xAB600000;
-
     /* SEND NEURON_DATA OF A CORE TO MEM */
     send_synapse_connection_to_mem(0, SYNAP_MATRIX_PTR);
-    reg_mprj_datal = 0xAB610000;
+    // send_neuron_params_to_mem(0, PARAM_PTR);
+    
+    reg_mprj_datal = read_32bit_from_mem(synapMatrixValue);
+
 }

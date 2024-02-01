@@ -159,6 +159,7 @@ module wb_port_tb;
 
 	initial begin
 	   wait(checkbits == 16'hAB60);
+		$display("____I'm here after waiting checkbits______!");
 		$display("Monitor: MPRJ-Logic WB Started");
 		wait(checkbits == 16'hAB61);
 		`ifdef GL

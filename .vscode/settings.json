@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "firmware_apis.h": "c",
+        "stdint.h": "c",
+        "vector": "c",
+        "string.h": "c"
+    }
+}
