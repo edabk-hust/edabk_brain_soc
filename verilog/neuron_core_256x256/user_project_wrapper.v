@@ -65,7 +65,7 @@ module user_project_wrapper #(
 /* User project neuron_core is instantiated  here   */
 /*--------------------------------------*/
 
-neuron_core core_inst (
+neuron_core_256x256 core_inst (
     `ifdef USE_POWER_PINS
     .vccd1(vccd1),
     .vssd1(vssd1),

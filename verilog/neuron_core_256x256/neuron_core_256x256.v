@@ -1,4 +1,4 @@
-module neuron_core
+module neuron_core_256x256
 (
     `ifdef USE_POWER_PINS
     inout vccd1,    // User area 1 1.8V supply
@@ -32,7 +32,7 @@ module neuron_core
     wire [255:0] spike_out;
     wire external_write_en;
 
-    AddressDecoder addr_decoder (
+    AddressDecoder_256x256 addr_decoder (
         .addr(wbs_adr_i),
         .synap_matrix(synap_matrix_select),
         .param(param_select),
@@ -43,7 +43,7 @@ module neuron_core
     wire [31:0] slave_dat_o [257:0];
     wire [257:0] slave_ack_o;
 
-    synapse_matrix #(.BASE_ADDR(SYNAPSE_BASE)) sm (
+    synapse_matrix_256x256 #(.BASE_ADDR(SYNAPSE_BASE)) sm (
         .wb_clk_i(clk),
         .wb_rst_i(rst),
         .wbs_cyc_i(wbs_cyc_i & synap_matrix_select),
@@ -66,7 +66,7 @@ module neuron_core
             wire [7:0] weight_select, pos_reset, neg_reset;
             wire [7:0] new_potential;
 
-            neuron_parameters #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
+            neuron_parameters_256x256 #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
                 .wb_clk_i(clk),
                 .wb_rst_i(rst),
                 .wbs_cyc_i(wbs_cyc_i & param_select & (param_num == i)),
@@ -92,7 +92,7 @@ module neuron_core
                 .neg_reset_o(neg_reset)
             );
             
-            neuron_block nb_inst (
+            neuron_block_256x256 nb_inst (
                 .voltage_potential_i(voltage_potential),
                 .pos_threshold_i(pos_threshold),
                 .neg_threshold_i(neg_threshold),
@@ -107,13 +107,15 @@ module neuron_core
                 .new_potential_o(new_potential),
                 .enable_i(neurons_connections[i]),
                 .spike_o(spike_out[i])
+                .clk(clk),
+                .reset_n(rst)
             );
         end
     endgenerate
 
     assign external_write_en = |spike_out;
 
-    neuron_spike_out #(.BASE_ADDR(SPIKE_OUT_BASE)) spike_out_inst (
+    neuron_spike_out_256x256 #(.BASE_ADDR(SPIKE_OUT_BASE)) spike_out_inst (
         .wb_clk_i(clk),
         .wb_rst_i(rst),
         .wbs_cyc_i(wbs_cyc_i & neuron_spike_out_select),

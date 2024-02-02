@@ -1,4 +1,4 @@
-module neuron_parameters (
+module neuron_parameters_256x256 (
     // Wishbone slave interface
     input wb_clk_i,             // Clock
     input wb_rst_i,             // Reset
@@ -30,7 +30,7 @@ module neuron_parameters (
 );
 
 parameter BASE_ADDR = 32'h40000000;  // Base address for this SRAM
-reg [31:0] sram [2:0];               // SRAM storage
+reg [31:0] sram [2:0];               // SRAM storage for 11 8-bit neuron parameters
 
 wire [1:0] address;
 assign address = (wbs_adr_i - BASE_ADDR) >> 2;
@@ -67,16 +67,16 @@ always @(negedge wb_clk_i or posedge wb_rst_i) begin
 end
 
 // Generating the neuron-specific outputs based on the contents of the SRAM
-assign voltage_potential_o = sram[0][7:0];
-assign pos_threshold_o = sram[0][15:8];
-assign neg_threshold_o = sram[0][23:16];
-assign leak_value_o = sram[0][31:24];
-assign weight_type1_o = sram[1][7:0];
-assign weight_type2_o = sram[1][15:8];
-assign weight_type3_o = sram[1][23:16];
-assign weight_type4_o = sram[1][31:24];
-assign weight_select_o = sram[2][7:0];
-assign pos_reset_o = sram[2][15:8];
-assign neg_reset_o = sram[2][23:16];
+assign voltage_potential_o = sram[0][31:24];
+assign pos_reset_o = sram[0][23:16];
+assign neg_reset_o = sram[0][23:16];
+assign weight_type1_o = sram[0][15:8];
+assign weight_type2_o = sram[0][7:0];
+assign weight_type3_o = sram[1][31:24];
+assign weight_type4_o = sram[1][23:16];
+assign weight_type4_o = sram[1][15:8];
+assign leak_value_o =   sram[1][7:0];
+assign pos_threshold_o = sram[2][31:24];
+assign neg_threshold_o = sram[2][23:16];
 
 endmodule

@@ -1,4 +1,4 @@
-module neuron_block (
+module neuron_block_256x256 (
     input clk,
     input reset_n,
     input [7:0] voltage_potential_i, // Current voltage potential
@@ -35,7 +35,7 @@ module neuron_block (
 
     // Adjusted Weight selection
     always @(*) begin
-        case(weight_select_i)otential
+        case(weight_select_i)
             8'd0: selected_weight = weight_type1_i;
             8'd1: selected_weight = weight_type2_i;
             8'd2: selected_weight = weight_type3_i;

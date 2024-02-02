@@ -1,4 +1,4 @@
-module AddressDecoder256 (
+module AddressDecoder_256x256 (
     input [31:0] addr,
     output reg synap_matrix,
     output reg [4:0] param_num,   // Will be valid only if address is in param range
