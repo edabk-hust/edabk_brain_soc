@@ -81,6 +81,7 @@ We completed the block diagram of the design before implementing the design usin
 ---
 
 ## User Project Memory Mapping
+### 256x32 core
 
 | Address (Bytes)        | Function               |
 |------------------------|------------------------|
@@ -90,6 +91,18 @@ We completed the block diagram of the design before implementing the design usin
 | 0x30004020 - 0x3000402B| param2                 |
 | ...                    | ...                    |
 | 0x300040F0 - 0x300040FB| param31                |
+| 0x30008000 - 0x30008003| neuron_spike_out       |
+
+### 256x256 core
+
+| Address (Bytes)        | Function               |
+|------------------------|------------------------|
+| 0x30000000 - 0x30003FFF| synap_matrix           |
+| 0x30004000 - 0x3000400B| param0                 |
+| 0x30004010 - 0x3000401B| param1                 |
+| 0x30004020 - 0x3000402B| param2                 |
+| ...                    | ...                    |
+| 0x30004FF0 - 0x30004FFB| param256                |
 | 0x30008000 - 0x30008003| neuron_spike_out       |
 
 ---

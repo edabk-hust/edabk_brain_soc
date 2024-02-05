@@ -18,7 +18,7 @@ module AddressDecoder_256x256 (
             2'b00: synap_matrix = 1;
             2'b01: begin
                 param = 1;
-                param_num = addr[8:4];
+                param_num = addr[11:4]; // Param num takes 8 bit to represent 256 params
             end
             2'b10: neuron_spike_out = 1;
             default: ; // Do nothing, outputs remain 0

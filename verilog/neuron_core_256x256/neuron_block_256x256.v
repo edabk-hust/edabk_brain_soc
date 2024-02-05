@@ -1,19 +1,19 @@
 module neuron_block_256x256 (
     input clk,
-    input reset_n,
-    input [7:0] voltage_potential_i, // Current voltage potential
-    input [7:0] pos_threshold_i,     // Positive threshold
-    input [7:0] neg_threshold_i,     // Negative threshold
-    input [7:0] leak_value_i,        // Leak value
-    input [7:0] weight_type1_i,      // 1st weight type
-    input [7:0] weight_type2_i,      // 2nd weight type
-    input [7:0] weight_type3_i,      // 3rd weight type
-    input [7:0] weight_type4_i,      // 4th weight type
+    input rst,
+    input signed [7:0] voltage_potential_i, // Current voltage potential
+    input signed [7:0] pos_threshold_i,     // Positive threshold
+    input signed [7:0] neg_threshold_i,     // Negative threshold
+    input signed [7:0] leak_value_i,        // Leak value
+    input signed [7:0] weight_type1_i,      // 1st weight type
+    input signed [7:0] weight_type2_i,      // 2nd weight type
+    input signed [7:0] weight_type3_i,      // 3rd weight type
+    input signed [7:0] weight_type4_i,      // 4th weight type
     input [7:0] weight_select_i,     // Weight selection
-    input [7:0] pos_reset_i,         // Positive reset
-    input [7:0] neg_reset_i,         // Negative reset
+    input signed [7:0] pos_reset_i,         // Positive reset
+    input signed [7:0] neg_reset_i,         // Negative reset
     input enable_i,                  // Enable signal
-    output reg [7:0] new_potential_o, // New voltage potential - changed to reg
+    output reg signed [7:0] new_potential_o, // New voltage potential - changed to reg
     output reg spike_o               // Spike output (1-bit) - changed to reg
 );
     reg [7:0] count,
@@ -22,7 +22,7 @@ module neuron_block_256x256 (
 
     // Update count a.k.a 
     always @(posedge clk or negedge reset_n) begin
-        if (~reset_n) begin
+        if (rst) begin
             count <= 0;
         end else begin
             if (count == 8'hFF) begin
@@ -44,7 +44,7 @@ module neuron_block_256x256 (
         endcase
     end
 
-    // Neuron logic   
+    // Modified neuron block logic: Add a count signal to check: Only after iterating through all 256 axons, the new_potential_o and spike_o are updated  
     always @(count) begin       
         if (enable_i == 1) begin
             if (count == 0) begin 
@@ -52,7 +52,7 @@ module neuron_block_256x256 (
             end 
             else if (count == 255) begin 
                 // Calculate potential
-                potential_calc = potential_calc + selected_weight - leak_value_i;
+                potential_calc = potential_calc + selected_weight + leak_value_i; // Modified based on Mr.Vu's code: + (not -) leak_value
 
                 // Handle potential overflow/underflow
                 if (potential_calc[8]) new_potential_o = 8'b00000000; // Underflow
@@ -63,7 +63,7 @@ module neuron_block_256x256 (
                 if (new_potential_o >= pos_threshold_i) begin
                     new_potential_o = pos_reset_i;
                     spike_o = 1;
-                end else if (new_potential_o <= neg_threshold_i) begin
+                end else if (new_potential_o < neg_threshold_i) begin // Modified based on Mr.Vu's code: < not <=
                     new_potential_o = neg_reset_i;
                     spike_o = 0;
                 end else begin

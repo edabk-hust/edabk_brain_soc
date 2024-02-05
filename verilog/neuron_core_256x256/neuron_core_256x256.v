@@ -19,123 +19,136 @@ module neuron_core_256x256
     output wire [31:0] wbs_dat_o
 );
 
-    parameter SYNAPSE_BASE = 32'h30000000;  // Base address for Synapse Matrix
-    parameter PARAM_BASE = 32'h30004000;    // Base address for Neuron Parameters
-    parameter PADDING_PARAM = 32'h00000010; // Padding for Neuron Parameters
-    parameter SPIKE_OUT_BASE = 32'h30008000; // Base address for Spike Out
+parameter SYNAPSE_BASE = 32'h30000000;  // Base address for Synapse Matrix
+parameter PARAM_BASE = 32'h30004000;    // Base address for Neuron Parameters
+parameter PADDING_PARAM = 32'h00000010; // Padding for Neuron Parameters
+parameter SPIKE_OUT_BASE = 32'h30008000; // Base address for Spike Out
 
-    wire synap_matrix_select;
-    wire param_select;
-    wire [7:0] param_num;
-    wire neuron_spike_out_select;
-    wire [255:0] neurons_connections;
-    wire [255:0] spike_out;
-    wire external_write_en;
+wire synap_matrix_select;               // Active when synapse matrix is the target
+wire param_select;                      // Active when any neuron parameter is the target
+wire [7:0] param_num;                   // Specifies the specific neuron parameter targeted
+wire neuron_spike_out_select;           // Active when neuron spike out is the target
 
-    AddressDecoder_256x256 addr_decoder (
-        .addr(wbs_adr_i),
-        .synap_matrix(synap_matrix_select),
-        .param(param_select),
-        .param_num(param_num),
-        .neuron_spike_out(neuron_spike_out_select)
-    );
 
-    wire [31:0] slave_dat_o [257:0];
-    wire [257:0] slave_ack_o;
+wire [255:0] neurons_connections;
+wire [255:0] spike_out;
+wire external_write_en;
 
-    synapse_matrix_256x256 #(.BASE_ADDR(SYNAPSE_BASE)) sm (
-        .wb_clk_i(clk),
-        .wb_rst_i(rst),
-        .wbs_cyc_i(wbs_cyc_i & synap_matrix_select),
-        .wbs_stb_i(wbs_stb_i & synap_matrix_select),
-        .wbs_we_i(wbs_we_i & synap_matrix_select),
-        .wbs_sel_i(wbs_sel_i),
-        .wbs_adr_i(wbs_adr_i),
-        .wbs_dat_i(wbs_dat_i),
-        .wbs_ack_o(slave_ack_o[0]),
-        .wbs_dat_o(slave_dat_o[0]),
-        .neurons_connections_o(neurons_connections)
-    );
+/* 
+* AddressDecoder_256x256: Decodes the incoming address from the Wishbone
+* interface (wbs_adr_i) and determines the target memory block among the 258 blocks
+* (1 synapse matrix, 256 neuron parameters, and 1 neuron spike out). It routes the 
+* interface signals to the correct destination within the SNN core and ensures that
+* the correct data output from these blocks is sent back to the Wishbone interface.
+*/
+AddressDecoder_256x256 addr_decoder (
+    .addr(wbs_adr_i),
+    .synap_matrix(synap_matrix_select),
+    .param(param_select),
+    .param_num(param_num),
+    .neuron_spike_out(neuron_spike_out_select)
+);
+/*
+* Each 32-bit entry in the slave_dat_o array corresponds to wbs_dat_o from a sub-module
+* Since slave_dat_o is only `wire` => it main use is to combine with circuit to wire matching wbs_dat_o signals 
+of submodule to wbs_dat_o of the top module 
+*/
+wire [31:0] slave_dat_o [257:0];        // Data outputs from each of the 258 memory blocks
+wire [257:0] slave_ack_o;               // Acknowledgment signals from each memory block
 
-    generate
-        genvar i;
-        for (i = 0; i < 256; i = i + 1) begin : neuron_instances
-            // wires for interfacing neuron_parameters and neuron_block
-            wire [7:0] voltage_potential, pos_threshold, neg_threshold, leak_value;
-            wire [7:0] weight_type1, weight_type2, weight_type3, weight_type4;
-            wire [7:0] weight_select, pos_reset, neg_reset;
-            wire [7:0] new_potential;
+synapse_matrix_256x256 #(.BASE_ADDR(SYNAPSE_BASE)) sm (
+    .wb_clk_i(clk),
+    .wb_rst_i(rst),
+    .wbs_cyc_i(wbs_cyc_i & synap_matrix_select),
+    .wbs_stb_i(wbs_stb_i & synap_matrix_select),
+    .wbs_we_i(wbs_we_i & synap_matrix_select),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_ack_o(slave_ack_o[0]),
+    .wbs_dat_o(slave_dat_o[0]),
+    .neurons_connections_o(neurons_connections)
+);
 
-            neuron_parameters_256x256 #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
-                .wb_clk_i(clk),
-                .wb_rst_i(rst),
-                .wbs_cyc_i(wbs_cyc_i & param_select & (param_num == i)),
-                .wbs_stb_i(wbs_stb_i & param_select & (param_num == i)),
-                .wbs_we_i(wbs_we_i & param_select & (param_num == i)),
-                .wbs_sel_i(wbs_sel_i),
-                .wbs_adr_i(wbs_adr_i),
-                .wbs_dat_i(wbs_dat_i),
-                .wbs_ack_o(slave_ack_o[i+1]),
-                .wbs_dat_o(slave_dat_o[i+1]),
-                .ext_voltage_potential_i(new_potential),
-                .ext_write_enable_i(neurons_connections[i]),
-                .voltage_potential_o(voltage_potential),
-                .pos_threshold_o(pos_threshold),
-                .neg_threshold_o(neg_threshold),
-                .leak_value_o(leak_value),
-                .weight_type1_o(weight_type1),
-                .weight_type2_o(weight_type2),
-                .weight_type3_o(weight_type3),
-                .weight_type4_o(weight_type4),
-                .weight_select_o(weight_select),
-                .pos_reset_o(pos_reset),
-                .neg_reset_o(neg_reset)
-            );
-            
-            neuron_block_256x256 nb_inst (
-                .voltage_potential_i(voltage_potential),
-                .pos_threshold_i(pos_threshold),
-                .neg_threshold_i(neg_threshold),
-                .leak_value_i(leak_value),
-                .weight_type1_i(weight_type1),
-                .weight_type2_i(weight_type2),
-                .weight_type3_i(weight_type3),
-                .weight_type4_i(weight_type4),
-                .weight_select_i(weight_select),
-                .pos_reset_i(pos_reset),
-                .neg_reset_i(neg_reset),
-                .new_potential_o(new_potential),
-                .enable_i(neurons_connections[i]),
-                .spike_o(spike_out[i])
-                .clk(clk),
-                .reset_n(rst)
-            );
-        end
-    endgenerate
+generate
+    genvar i;
+    for (i = 0; i < 256; i = i + 1) begin : neuron_instances
+        // wires for interfacing neuron_parameters and neuron_block
+        wire [7:0] voltage_potential, pos_threshold, neg_threshold, leak_value;
+        wire [7:0] weight_type1, weight_type2, weight_type3, weight_type4;
+        wire [7:0] weight_select, pos_reset, neg_reset;
+        wire [7:0] new_potential;
 
-    assign external_write_en = |spike_out;
+        neuron_parameters_256x256 #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
+            .wb_clk_i(clk),
+            .wb_rst_i(rst),
+            .wbs_cyc_i(wbs_cyc_i & param_select & (param_num == i)),
+            .wbs_stb_i(wbs_stb_i & param_select & (param_num == i)),
+            .wbs_we_i(wbs_we_i & param_select & (param_num == i)),
+            .wbs_sel_i(wbs_sel_i),
+            .wbs_adr_i(wbs_adr_i),
+            .wbs_dat_i(wbs_dat_i),
+            .wbs_ack_o(slave_ack_o[i+1]),
+            .wbs_dat_o(slave_dat_o[i+1]),
+            .ext_voltage_potential_i(new_potential),
+            .ext_write_enable_i(neurons_connections[i]),
+            .voltage_potential_o(voltage_potential),
+            .pos_threshold_o(pos_threshold),
+            .neg_threshold_o(neg_threshold),
+            .leak_value_o(leak_value),
+            .weight_type1_o(weight_type1),
+            .weight_type2_o(weight_type2),
+            .weight_type3_o(weight_type3),
+            .weight_type4_o(weight_type4),
+            .weight_select_o(weight_select),
+            .pos_reset_o(pos_reset),
+            .neg_reset_o(neg_reset)
+        );
+        
+        neuron_block_256x256 nb_inst (
+            .voltage_potential_i(voltage_potential),
+            .pos_threshold_i(pos_threshold),
+            .neg_threshold_i(neg_threshold),
+            .leak_value_i(leak_value),
+            .weight_type1_i(weight_type1),
+            .weight_type2_i(weight_type2),
+            .weight_type3_i(weight_type3),
+            .weight_type4_i(weight_type4),
+            .weight_select_i(weight_select),
+            .pos_reset_i(pos_reset),
+            .neg_reset_i(neg_reset),
+            .new_potential_o(new_potential),
+            .enable_i(neurons_connections[i]),
+            .spike_o(spike_out[i])
+            .clk(clk),
+            .rst(rst)
+        );
+    end
+endgenerate
 
-    neuron_spike_out_256x256 #(.BASE_ADDR(SPIKE_OUT_BASE)) spike_out_inst (
-        .wb_clk_i(clk),
-        .wb_rst_i(rst),
-        .wbs_cyc_i(wbs_cyc_i & neuron_spike_out_select),
-        .wbs_stb_i(wbs_stb_i & neuron_spike_out_select),
-        .wbs_we_i(wbs_we_i & neuron_spike_out_select),
-        .wbs_sel_i(wbs_sel_i),
-        .wbs_adr_i(wbs_adr_i),
-        .wbs_dat_i(wbs_dat_i),
-        .wbs_ack_o(slave_ack_o[257]),
-        .wbs_dat_o(slave_dat_o[257]),
-        .external_spike_data_i(spike_out),
-        .external_write_en_i(external_write_en)
-    );
+assign external_write_en = |spike_out;
 
-    // Conditional assignment for the wbs_dat_o output
-    assign wbs_dat_o = synap_matrix_select ? slave_dat_o[0] : 
-                       neuron_spike_out_select ? slave_dat_o[257] : 
-                       param_select ? slave_dat_o[param_num] : 
-                       32'b0;
+neuron_spike_out_256x256 #(.BASE_ADDR(SPIKE_OUT_BASE)) spike_out_inst (
+    .wb_clk_i(clk),
+    .wb_rst_i(rst),
+    .wbs_cyc_i(wbs_cyc_i & neuron_spike_out_select),
+    .wbs_stb_i(wbs_stb_i & neuron_spike_out_select),
+    .wbs_we_i(wbs_we_i & neuron_spike_out_select),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_ack_o(slave_ack_o[257]),
+    .wbs_dat_o(slave_dat_o[257]),
+    .external_spike_data_i(spike_out),
+    .external_write_en_i(external_write_en)
+);
 
-    assign wbs_ack_o = |slave_ack_o;
+// The AddressDecoder's output signals determine which slave_dat_o signal's data is routed to the wbs_dat_o
+assign wbs_dat_o = synap_matrix_select ? slave_dat_o[0] : 
+                    neuron_spike_out_select ? slave_dat_o[257] : 
+                    param_select ? slave_dat_o[param_num] : 
+                    32'b0;
+
+assign wbs_ack_o = |slave_ack_o;
 
 endmodule
