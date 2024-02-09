@@ -12,7 +12,7 @@ module neuron_parameters_256x256 (
     output reg [31:0] wbs_dat_o, // Data output
     
     // New inputs for external write to voltage_potential_o
-    input [7:0] ext_voltage_potential_i, // External voltage potential input
+    input signed [7:0] ext_voltage_potential_i, // External voltage potential input
     input ext_write_enable_i,            // External write enable signal
 
     // Neuron-specific outputs
@@ -32,11 +32,12 @@ module neuron_parameters_256x256 (
 parameter PARAM_BASE = 32'h30004000;  // base address of params memory segment
 parameter BASE_ADDR = 32'h30004010;  // Modify later in neuron_core module
 reg [31:0] sram [2:0];               // SRAM storage for 11 8-bit neuron parameters
+wire [79:0] current_neuron_parameter; // Concatenated from the SRAM into full 80-bit parameter
 
-// Modified: New logic to calculate the index of the neuron parameter
+// Modified: New logic to calculate the current neuron index of the neuron parameter
 // weight_select_o = 0 if index is even, 1 if odd
 wire [7:0] index;
-assign index = (wbs_adr_i - PARAM_BASE) >> 4; // Right shift by 4 (divide by 16) to get the index
+assign index = (BASE_ADDR - PARAM_BASE) >> 4; // Right shift by 4 (divide by 16) to get the index
 
 // Assigning weight_select_o based on the index
 assign weight_select_o = index[0]; // index[0] is 1 if index is odd, 0 if even
@@ -69,23 +70,37 @@ always @(negedge wb_clk_i or posedge wb_rst_i) begin
             
             // New logic for external write to voltage_potential_o
             if (ext_write_enable_i) begin
-                sram[0][7:0] <= ext_voltage_potential_i;
+                sram[2][15:8] <= ext_voltage_potential_i;
             end
         end
     end
 end
 
-// Generating the neuron-specific outputs based on the contents of the SRAM
-assign voltage_potential_o = sram[0][31:24];
-assign pos_reset_o      =   sram[0][23:16];
-assign neg_reset_o      =   -sram[0][23:16]; // Hard reset mode 0: pos_reset_val = reset_val, neg_reset_val = -reset_val
-assign weight_type1_o   =   sram[0][15:8];
-assign weight_type2_o   =   sram[0][7:0];
-assign weight_type3_o   =   sram[1][31:24];
-assign weight_type4_o   =   sram[1][23:16];
-assign leak_value_o     =   sram[1][15:8];
-assign pos_threshold_o  =   sram[1][7:0];
-assign neg_threshold_o  =   sram[2][31:24];
-// assign axon_dest        =   sram[2][23:16];
+assign current_neuron_parameter = {sram[2][0+:16], sram[1], sram[0]}; // Concatenating the 2 segments of 32-bit parameters and 1 segment of 16-bit parameter
+// Generate the neuron-specific outputs based on the current_neuron_parameter
+assign voltage_potential_o = current_neuron_parameter[79-:8];
+assign pos_reset_o      =   current_neuron_parameter[71-:8];
+assign neg_reset_o      =   -signed'(current_neuron_parameter[71-:8]); // Hard reset mode 0: pos_reset_val = reset_val, neg_reset_val = -reset_val
+assign weight_type1_o   =   current_neuron_parameter[63-:8];
+assign weight_type2_o   =   current_neuron_parameter[55-:8];
+assign weight_type3_o   =   current_neuron_parameter[47-:8];
+assign weight_type4_o   =   current_neuron_parameter[39-:8];
+assign leak_value_o     =   current_neuron_parameter[31-:8];
+assign pos_threshold_o  =   current_neuron_parameter[23-:8];
+assign neg_threshold_o  =   current_neuron_parameter[15-:8];
+// assign axon_dest        =   current_neuron_parameter[7-:8];
+
+// // Generating the neuron-specific outputs based on the contents of the SRAM
+// assign voltage_potential_o = sram[0][31:24];
+// assign pos_reset_o      =   sram[0][23:16];
+// assign neg_reset_o      =   -sram[0][23:16]; // Hard reset mode 0: pos_reset_val = reset_val, neg_reset_val = -reset_val
+// assign weight_type1_o   =   sram[0][15:8];
+// assign weight_type2_o   =   sram[0][7:0];
+// assign weight_type3_o   =   sram[1][31:24];
+// assign weight_type4_o   =   sram[1][23:16];
+// assign leak_value_o     =   sram[1][15:8];
+// assign pos_threshold_o  =   sram[1][7:0];
+// assign neg_threshold_o  =   sram[2][31:24];
+// // assign axon_dest        =   sram[2][23:16];
 
 endmodule
