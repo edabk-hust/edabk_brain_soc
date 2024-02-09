@@ -1,6 +1,4 @@
 module neuron_block_256x256 (
-    input clk,
-    input rst,
     input signed [7:0] voltage_potential_i, // Current voltage potential
     input signed [7:0] pos_threshold_i,     // Positive threshold
     input signed [7:0] neg_threshold_i,     // Negative threshold
@@ -14,24 +12,12 @@ module neuron_block_256x256 (
     input signed [7:0] neg_reset_i,         // Negative reset
     input enable_i,                  // Enable signal
     output reg signed [7:0] new_potential_o, // New voltage potential - changed to reg
-    output reg spike_o               // Spike output (1-bit) - changed to reg
+    output reg spike_o,               // Spike output (1-bit) - changed to reg
+    input new_image_packet_i,         // signal to indicate new image packet
+    input last_image_packet_i         // signal to indicate last image packet
 );
-    reg [7:0] count,
     reg [7:0] selected_weight;
     reg [8:0] potential_calc; // changed to reg
-
-    // Update count a.k.a 
-    always @(posedge clk or negedge reset_n) begin
-        if (rst) begin
-            count <= 0;
-        end else begin
-            if (count == 8'hFF) begin
-                count <= 0;
-            end else begin
-                count <= count + 1;
-            end
-        end
-    end
 
     // Adjusted Weight selection
     always @(*) begin
@@ -44,13 +30,13 @@ module neuron_block_256x256 (
         endcase
     end
 
-    // Modified neuron block logic: Add a count signal to check: Only after iterating through all 256 axons, the new_potential_o and spike_o are updated  
-    always @(count) begin       
-        if (enable_i == 1) begin
-            if (count == 0) begin 
-                potential_calc = {1'b0, voltage_potential_i};
-            end 
-            else if (count == 255) begin 
+    // Modified neuron block logic: Add signals to check for new_image_spike and last_image_spike
+    always @(*) begin
+        if (new_image_packet_i) begin 
+            potential_calc = {1'b0, voltage_potential_i};
+        end       
+        else if (enable_i) begin             
+            if (last_image_packet_i) begin 
                 // Calculate potential
                 potential_calc = potential_calc + selected_weight + leak_value_i; // Modified based on Mr.Vu's code: + (not -) leak_value
 
@@ -73,7 +59,8 @@ module neuron_block_256x256 (
             else begin 
                 potential_calc = potential_calc + selected_weight;
             end
-        end else begin
+        end 
+        else begin
             new_potential_o = 8'b0;
             spike_o = 0;
         end

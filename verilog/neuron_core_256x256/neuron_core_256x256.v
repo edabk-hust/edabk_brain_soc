@@ -1,3 +1,12 @@
+/* TODO: Signal first packet and last packet of an image
+
+Approach 1: Have a pseudo block in memory mapping (32’b3000Cxxx ⇒ addr[15:14] = 2’b11),
+            storing 1 event new_image_spike + 1 num_spikes value) 
+            & Create a new module Controller to store controller states 
+            new_image_spike, process_image_spike, last_image_spike, process_last_spike
+Approach 2: Try logic analyzer to control new_image_packet and last_image_packet
+
+*/
 module neuron_core_256x256
 (
     `ifdef USE_POWER_PINS
@@ -28,11 +37,19 @@ wire synap_matrix_select;               // Active when synapse matrix is the tar
 wire param_select;                      // Active when any neuron parameter is the target
 wire [7:0] param_num;                   // Specifies the specific neuron parameter targeted
 wire neuron_spike_out_select;           // Active when neuron spike out is the target
-
+wire new_image_packet, last_image_packet; // Signals to indicate new and last image packets
 
 wire [255:0] neurons_connections;
 wire [255:0] spike_out;
 wire external_write_en;
+
+/*
+* Each 32-bit entry in the slave_dat_o array corresponds to wbs_dat_o from a sub-module
+* Since slave_dat_o is only `wire` => it main use is to combine with circuit to wire matching wbs_dat_o signals 
+of submodule to wbs_dat_o of the top module 
+*/
+wire [31:0] slave_dat_o [257:0];        // Data outputs from each of the 258 memory blocks
+wire [257:0] slave_ack_o;               // Acknowledgment signals from each memory block
 
 /* 
 * AddressDecoder_256x256: Decodes the incoming address from the Wishbone
@@ -46,15 +63,11 @@ AddressDecoder_256x256 addr_decoder (
     .synap_matrix(synap_matrix_select),
     .param(param_select),
     .param_num(param_num),
-    .neuron_spike_out(neuron_spike_out_select)
+    .neuron_spike_out(neuron_spike_out_select),
+    .new_image_packet(new_image_packet),
+    .last_image_packet(last_image_packet)
 );
-/*
-* Each 32-bit entry in the slave_dat_o array corresponds to wbs_dat_o from a sub-module
-* Since slave_dat_o is only `wire` => it main use is to combine with circuit to wire matching wbs_dat_o signals 
-of submodule to wbs_dat_o of the top module 
-*/
-wire [31:0] slave_dat_o [257:0];        // Data outputs from each of the 258 memory blocks
-wire [257:0] slave_ack_o;               // Acknowledgment signals from each memory block
+
 
 synapse_matrix_256x256 #(.BASE_ADDR(SYNAPSE_BASE)) sm (
     .wb_clk_i(clk),
@@ -74,10 +87,11 @@ generate
     genvar i;
     for (i = 0; i < 256; i = i + 1) begin : neuron_instances
         // wires for interfacing neuron_parameters and neuron_block
-        wire [7:0] voltage_potential, pos_threshold, neg_threshold, leak_value;
-        wire [7:0] weight_type1, weight_type2, weight_type3, weight_type4;
-        wire [7:0] weight_select, pos_reset, neg_reset;
-        wire [7:0] new_potential;
+        wire signed [7:0] voltage_potential, pos_threshold, neg_threshold, leak_value;
+        wire signed [7:0] weight_type1, weight_type2, weight_type3, weight_type4;
+        wire signed [7:0] pos_reset, neg_reset;
+        wire [7:0] weight_select;
+        wire signed [7:0] new_potential;
 
         neuron_parameters_256x256 #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
             .wb_clk_i(clk),
@@ -119,9 +133,9 @@ generate
             .neg_reset_i(neg_reset),
             .new_potential_o(new_potential),
             .enable_i(neurons_connections[i]),
-            .spike_o(spike_out[i])
-            .clk(clk),
-            .rst(rst)
+            .spike_o(spike_out[i]),
+            .new_image_packet_i(new_image_packet),
+            .last_image_packet_i(last_image_packet)
         );
     end
 endgenerate
