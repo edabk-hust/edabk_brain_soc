@@ -29,7 +29,7 @@ always @(negedge wb_clk_i or posedge wb_rst_i) begin
         wbs_dat_o <= 32'b0;
     end
     else if (wbs_cyc_i && wbs_stb_i) begin
-        if (address >= 0 && address < 2048) begin
+        if (address >= 0 && address < 2048) begin // 2048 = 256 neurons * 8 segements of 32-bit synap connections
             if (wbs_we_i) begin
                 // Byte-specific writes based on wbs_sel_i
                 if (wbs_sel_i[0]) sram[address][7:0] <= wbs_dat_i[7:0];
