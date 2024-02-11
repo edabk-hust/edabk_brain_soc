@@ -1,0 +1,171 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/ADMIN/GithubClonedRepo/edabk_brain_soc/verification/tb_neuron_core_256x256/sim
+T_opt
+!s110 1707466382
+V5zc66kd;`MBZ0TazP>gP?2
+04 22 4 work tb_neuron_core_256x256 fast 0
+=1-309c2317fce4-65c5de8e-1b2-47a0
+o-quiet -auto_acc_if_foreign -work work +acc
+Z1 tCvgOpt 0
+n@_opt
+OL;O;10.7c;67
+R0
+vAddressDecoder_256x256
+Z2 !s110 1707468357
+!i10b 1
+!s100 m2]nhKlDmMnc9fQ74WbSd3
+I19KG?CW0a430EaO?cTS?^0
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1707466365
+8../../../verilog/neuron_core_256x256/AddressDecoder_256x256.v
+F../../../verilog/neuron_core_256x256/AddressDecoder_256x256.v
+L0 23
+Z4 OL;L;10.7c;67
+r1
+!s85 0
+31
+Z5 !s108 1707468357.000000
+Z6 !s107 ../../../verilog/neuron_core_256x256/synapse_matrix_256x256.v|../../../verilog/neuron_core_256x256/neuron_spike_out_256x256.v|../../../verilog/neuron_core_256x256/neuron_parameters_256x256.v|../../../verilog/neuron_core_256x256/neuron_core_256x256.v|../../../verilog/neuron_core_256x256/neuron_block_256x256.v|../../../verilog/neuron_core_256x256/AddressDecoder_256x256.v|
+Z7 !s90 -reportprogress|300|../../../verilog/neuron_core_256x256/AddressDecoder_256x256.v|../../../verilog/neuron_core_256x256/neuron_block_256x256.v|../../../verilog/neuron_core_256x256/neuron_core_256x256.v|../../../verilog/neuron_core_256x256/neuron_parameters_256x256.v|../../../verilog/neuron_core_256x256/neuron_spike_out_256x256.v|../../../verilog/neuron_core_256x256/synapse_matrix_256x256.v|
+!i113 0
+Z8 o-L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R1
+n@address@decoder_256x256
+vneuron_block_256x256
+R2
+!i10b 1
+!s100 UQ0ngIHCDL78WRd:OUOWA0
+IcYCTX9XI?Q0MW>F9BYoEc1
+R3
+R0
+w1707315552
+8../../../verilog/neuron_core_256x256/neuron_block_256x256.v
+F../../../verilog/neuron_core_256x256/neuron_block_256x256.v
+L0 1
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 0
+R8
+R1
+vneuron_core_256x256
+R2
+!i10b 1
+!s100 W[8Q;<Kin;aeLiN_MjWB]2
+IF4Sji;RGV2iz4WA>?nz`A2
+R3
+R0
+w1707466353
+8../../../verilog/neuron_core_256x256/neuron_core_256x256.v
+F../../../verilog/neuron_core_256x256/neuron_core_256x256.v
+L0 1
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 0
+R8
+R1
+vneuron_parameters_256x256
+R2
+!i10b 1
+!s100 UQWPKIPJKV?YD8JaBA>Cc3
+IiJPHMh[fl7L_?6i5EGOh=0
+R3
+R0
+w1707453318
+8../../../verilog/neuron_core_256x256/neuron_parameters_256x256.v
+F../../../verilog/neuron_core_256x256/neuron_parameters_256x256.v
+L0 1
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 0
+R8
+R1
+vneuron_spike_out_256x256
+R2
+!i10b 1
+!s100 RJIN_OYdDLIeUHAM_4K8b0
+I7B`=b`b9DRgSP^8mdDH@g1
+R3
+R0
+w1706856001
+8../../../verilog/neuron_core_256x256/neuron_spike_out_256x256.v
+F../../../verilog/neuron_core_256x256/neuron_spike_out_256x256.v
+L0 1
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 0
+R8
+R1
+vsynapse_matrix_256x256
+R2
+!i10b 1
+!s100 g@?C2LZamVK6@5DBcR`Ti0
+Ij?X<?Vf03@5M8?2^5`[g<2
+R3
+R0
+w1707411513
+8../../../verilog/neuron_core_256x256/synapse_matrix_256x256.v
+F../../../verilog/neuron_core_256x256/synapse_matrix_256x256.v
+L0 1
+R4
+r1
+!s85 0
+31
+R5
+R6
+R7
+!i113 0
+R8
+R1
+vtb_neuron_core_256x256
+DXx6 sv_std 3 std 0 22 d=_JfHTnXCN[H5FjiaJJc0
+R2
+!i10b 1
+!s100 `m^bM[]mdNN`816I[P[PX1
+I:7@Qo39QEFUX[TjXD`U5W1
+R3
+!s105 tb_neuron_core_256x256_sv_unit
+S1
+R0
+w1707468166
+8../tb_neuron_core_256x256.sv
+F../tb_neuron_core_256x256.sv
+L0 3
+R4
+r1
+!s85 0
+31
+R5
+!s107 ../tb_neuron_core_256x256.sv|
+!s90 -reportprogress|300|../tb_neuron_core_256x256.sv|
+!i113 0
+R8
+R1
