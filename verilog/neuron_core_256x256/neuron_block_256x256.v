@@ -32,11 +32,11 @@ module neuron_block_256x256 (
 
     // Modified neuron block logic: Add signals to check for new_image_spike and last_image_spike
     always @(*) begin
-        if (new_image_packet_i) begin 
-            potential_calc = {1'b0, voltage_potential_i};
-        end       
-        else if (enable_i) begin             
-            if (last_image_packet_i) begin 
+        if (enable_i) begin
+            if (new_image_packet_i) begin 
+                potential_calc = voltage_potential_i + selected_weight;
+            end                            
+            else if (last_image_packet_i) begin 
                 // Calculate potential
                 potential_calc = potential_calc + selected_weight + leak_value_i; // Modified based on Mr.Vu's code: + (not -) leak_value
 

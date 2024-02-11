@@ -26,6 +26,11 @@ module neuron_core_256x256
     input  wire [31:0] wbs_dat_i,
     output wire wbs_ack_o,
     output wire [31:0] wbs_dat_o
+
+    // Logic Analyzer Signals
+    input  [127:0] la_data_in,
+    output [127:0] la_data_out,
+    input  [127:0] la_oenb // active-low, enable output from user_project_wrapper to managementSoC
 );
 
 parameter SYNAPSE_BASE = 32'h30000000;  // Base address for Synapse Matrix
@@ -51,6 +56,10 @@ of submodule to wbs_dat_o of the top module
 wire [31:0] slave_dat_o [257:0];        // Data outputs from each of the 258 memory blocks
 wire [257:0] slave_ack_o;               // Acknowledgment signals from each memory block
 
+// Enable first 2 bits of LA signals for: new_image_spike & last_image_spike
+assign {last_image_packet, new_image_packet} = la_data_in[1:0];
+// assign la_write = ~la_oenb[1:0]
+
 /* 
 * AddressDecoder_256x256: Decodes the incoming address from the Wishbone
 * interface (wbs_adr_i) and determines the target memory block among the 258 blocks
@@ -63,9 +72,7 @@ AddressDecoder_256x256 addr_decoder (
     .synap_matrix(synap_matrix_select),
     .param(param_select),
     .param_num(param_num),
-    .neuron_spike_out(neuron_spike_out_select),
-    .new_image_packet(new_image_packet),
-    .last_image_packet(last_image_packet)
+    .neuron_spike_out(neuron_spike_out_select)
 );
 
 

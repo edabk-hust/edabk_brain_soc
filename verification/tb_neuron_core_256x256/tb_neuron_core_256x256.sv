@@ -19,6 +19,16 @@ logic [31:0] wbs_dat_i;
 wire wbs_ack_o;
 wire [31:0] wbs_dat_o;
 
+logic new_image_packet, last_image_packet; // Signals to indicate new and last image packets
+
+// Logic Analyzer Signals
+logic   [127:0] la_data_in,
+logic   [127:0] la_data_out,
+logic   [127:0] la_oenb // active-low, enable output from user_project_wrapper to managementSoC
+
+// Enable first 2 bits of LA signals for: new_image_packet & last_image_packet
+assign la_data_in[1:0] = {last_image_packet, new_image_packet};
+
 // Instantiate the Unit Under Test (UUT)
 neuron_core_256x256 uut_neuron_core (
     .clk(clk),
@@ -30,7 +40,10 @@ neuron_core_256x256 uut_neuron_core (
     .wbs_adr_i(wbs_adr_i),
     .wbs_dat_i(wbs_dat_i),
     .wbs_ack_o(wbs_ack_o),
-    .wbs_dat_o(wbs_dat_o)
+    .wbs_dat_o(wbs_dat_o),
+    .la_data_in(la_data_in),
+    .la_data_out(la_data_out),
+    .la_oenb(la_oenb)
 );
 
 // Clock generation
@@ -115,7 +128,7 @@ logic [79:0] current_neuron_param;
 ////////////////////////////////////////////////////////////////
 event synap_matrix_start, synap_matrix_done; 
 event neuron_params_start, neuron_params_done;
-event new_image_packet, last_image_packet;
+event new_image_packet_event, last_image_packet_event;
 
 // Initial block for reset and tests
 initial begin //initial begin MUST NOT include initialization statements
@@ -169,13 +182,13 @@ initial begin //initial begin MUST NOT include initialization statements
         
     // end
     // Test by sending packets of 1st image
-    #20 -> new_image_packet;
-    wishbone_read(32'h3000C001); // new_image_packet = 1
+    #20 -> new_image_packet_event;
+    new_image_packet = 1; // new_image_packet = 1
     for (int j = 0; j < num_pic[0]; j++) begin
         wishbone_read(32'h30000000 + packet[j]*32); // Each synap connection of a neuron takes up 32 memory locations
     end
-    wishbone_read(32'h3000C003); // last_image_packet = 1
-    -> last_image_packet;
+    last_image_packet = 1; // last_image_packet = 1
+    -> last_image_packet_event;
     
 
     // Complete the test
