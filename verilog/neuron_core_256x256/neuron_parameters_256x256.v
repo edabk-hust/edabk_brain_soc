@@ -24,23 +24,23 @@ module neuron_parameters_256x256 (
     output signed [7:0] weight_type2_o,      // 2nd weight type
     output signed [7:0] weight_type3_o,      // 3rd weight type
     output signed [7:0] weight_type4_o,      // 4th weight type
-    output [7:0] weight_select_o,     // Weight selection
+    // output [7:0] weight_select_o,     // Weight selection
     output signed [7:0] pos_reset_o,         // Positive reset
     output signed [7:0] neg_reset_o          // Negative reset
 );
 
-parameter PARAM_BASE = 32'h30004000;  // base address of params memory segment
+// parameter PARAM_BASE = 32'h30004000;  // base address of params memory segment
 parameter BASE_ADDR = 32'h30004010;  // Modify later in neuron_core module
 reg [31:0] sram [2:0];               // SRAM storage for 11 8-bit neuron parameters
 wire [79:0] current_neuron_parameter; // Concatenated from the SRAM into full 80-bit parameter
 
-// Modified: New logic to calculate the current neuron index of the neuron parameter
-// weight_select_o = 0 if index is even, 1 if odd
-wire [7:0] index;
-assign index = (BASE_ADDR - PARAM_BASE) >> 4; // Right shift by 4 (divide by 16) to get the index
+// // Modified: New logic to calculate the current neuron index of the neuron parameter
+// // weight_select_o = 0 if index is even, 1 if odd
+// wire [7:0] index;
+// assign index = (BASE_ADDR - PARAM_BASE) >> 4; // Right shift by 4 (divide by 16) to get the index
 
-// Assigning weight_select_o based on the index
-assign weight_select_o = index[0]; // index[0] is 1 if index is odd, 0 if even
+// // Assigning weight_select_o based on the index
+// assign weight_select_o = index[0]; // index[0] is 1 if index is odd, 0 if even
 
 wire [1:0] address;
 assign address = (wbs_adr_i - BASE_ADDR) >> 2; // Right shift by 2 (divide by 4) to get the segment index

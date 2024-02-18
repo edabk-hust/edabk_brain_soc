@@ -32,16 +32,22 @@ parameter SYNAPSE_BASE = 32'h30000000;  // Base address for Synapse Matrix
 parameter PARAM_BASE = 32'h30004000;    // Base address for Neuron Parameters
 parameter PADDING_PARAM = 32'h00000010; // Padding for Neuron Parameters
 parameter SPIKE_OUT_BASE = 32'h30008000; // Base address for Spike Out
+parameter SPIKE_EVENT_BASE = 32'h3000C000; // Base address for Spike Event Controller
 
-wire synap_matrix_select;               // Active when synapse matrix is the target
-wire param_select;                      // Active when any neuron parameter is the target
+wire synap_matrix_select;   
+wire param_select;                      
 wire [7:0] param_num;                   // Specifies the specific neuron parameter targeted
-wire neuron_spike_out_select;           // Active when neuron spike out is the target
-wire new_image_packet, last_image_packet; // Signals to indicate new and last image packets
+wire neuron_spike_out_select;           
+wire new_image_packet, last_image_packet; // Signals to indicate sending of last image packets
+wire image_spike_event_select;                
+wire [7:0] image_num_packets;                 // Number of packets of the current image
 
+wire [1:0] weight_select;            
 wire [255:0] neurons_connections;
 wire [255:0] spike_out;
 wire external_write_en;
+
+assign new_image_packet = image_spike_event_select;
 
 /*
 * Each 32-bit entry in the slave_dat_o array corresponds to wbs_dat_o from a sub-module
@@ -64,8 +70,8 @@ AddressDecoder_256x256 addr_decoder (
     .param(param_select),
     .param_num(param_num),
     .neuron_spike_out(neuron_spike_out_select),
-    .new_image_packet(new_image_packet),
-    .last_image_packet(last_image_packet)
+    .image_spike_event(image_spike_event_select),
+    .image_num_packets(image_num_packets)
 );
 
 
@@ -80,7 +86,19 @@ synapse_matrix_256x256 #(.BASE_ADDR(SYNAPSE_BASE)) sm (
     .wbs_dat_i(wbs_dat_i),
     .wbs_ack_o(slave_ack_o[0]),
     .wbs_dat_o(slave_dat_o[0]),
-    .neurons_connections_o(neurons_connections)
+    .neurons_connections_o(neurons_connections),
+    .weight_select_o(weight_select)
+);
+
+spike_event_controller spike_event_inst (
+    .wb_clk_i(clk),
+    .wb_rst_i(rst),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_stb_i(wbs_stb_i),
+    .wbs_we_i(wbs_we_i),
+    .image_spike_event_i(image_spike_event_select),
+    .image_num_packets_i(image_num_packets),
+    .last_image_packet_o(last_image_packet)
 );
 
 generate
@@ -90,7 +108,7 @@ generate
         wire signed [7:0] voltage_potential, pos_threshold, neg_threshold, leak_value;
         wire signed [7:0] weight_type1, weight_type2, weight_type3, weight_type4;
         wire signed [7:0] pos_reset, neg_reset;
-        wire [7:0] weight_select;
+        // wire [7:0] weight_select;
         wire signed [7:0] new_potential;
 
         neuron_parameters_256x256 #(.BASE_ADDR(PARAM_BASE + i*PADDING_PARAM)) np_inst (
@@ -114,7 +132,7 @@ generate
             .weight_type2_o(weight_type2),
             .weight_type3_o(weight_type3),
             .weight_type4_o(weight_type4),
-            .weight_select_o(weight_select),
+            // .weight_select_o(weight_select),
             .pos_reset_o(pos_reset),
             .neg_reset_o(neg_reset)
         );

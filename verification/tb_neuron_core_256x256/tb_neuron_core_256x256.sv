@@ -170,11 +170,10 @@ initial begin //initial begin MUST NOT include initialization statements
     // end
     // Test by sending packets of 1st image
     #20 -> new_image_packet;
-    wishbone_read(32'h3000C001); // new_image_packet = 1
+    wishbone_read(32'h3000C000 + num_pic[0]); // new_image_packet = 1
     for (int j = 0; j < num_pic[0]; j++) begin
         wishbone_read(32'h30000000 + packet[j]*32); // Each synap connection of a neuron takes up 32 memory locations
     end
-    wishbone_read(32'h3000C003); // last_image_packet = 1
     -> last_image_packet;
     
 

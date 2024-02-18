@@ -10,17 +10,22 @@ module synapse_matrix_256x256 (
     input [31:0] wbs_dat_i,     // Data input for writes
     output reg wbs_ack_o,       // Acknowledgment for data transfer
     output reg [31:0] wbs_dat_o, // Data output (not used in this module)
+    output wire [1:0] weight_select_o, // Weight selection: if axon index is even (0) else odd (1)
 
     // Synapse matrix specific output
     output [255:0] neurons_connections_o  // Represents connections of an axon with 256 neurons
 );
 
-parameter BASE_ADDR = 32'h30000000;
+parameter [31:0] BASE_ADDR = 32'h30000000;
 reg [31:0] sram [2047:0];         // SRAM storage
 wire [31:0] address;              // Calculated from the input address
+wire [31:0] axon_num;                    // Calculated from the input address
 
 // Continuous assignment for address computation
 assign address = (wbs_adr_i - BASE_ADDR) >> 2;
+
+assign axon_num = (wbs_adr_i - BASE_ADDR) >> 5; // Divide by 32 to get the axon index
+assign weight_select_o = {1'b0, axon_num[0]}; // Take the LSB to determine if it's even or odd
 
 // Handling read/write operations and the acknowledgment signal
 always @(negedge wb_clk_i or posedge wb_rst_i) begin
@@ -29,7 +34,7 @@ always @(negedge wb_clk_i or posedge wb_rst_i) begin
         wbs_dat_o <= 32'b0;
     end
     else if (wbs_cyc_i && wbs_stb_i) begin
-        if (address >= 0 && address < 2048) begin // 2048 = 256 neurons * 8 segements of 32-bit synap connections
+        if (address >= 0 && address < 2048) begin // 2048 = 256 neurons * 8 segments of 32-bit synap connections
             if (wbs_we_i) begin
                 // Byte-specific writes based on wbs_sel_i
                 if (wbs_sel_i[0]) sram[address][7:0] <= wbs_dat_i[7:0];
